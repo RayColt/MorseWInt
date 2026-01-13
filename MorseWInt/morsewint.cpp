@@ -10,20 +10,13 @@
 #include <random>
 #include <string>
 #include "morse.h"
+#include <commctrl.h>
+#pragma comment(lib, "comctl32.lib")
 
 #include <shellapi.h>
 #pragma comment(lib, "Shell32.lib")
-using namespace std;
 
-// Structs
-struct ThreadParam
-{
-    RECT rc;
-    // optional: pass as owner so 
-    // overlay/preview behaviors remain
-    HWND ownerForParent;
-     const wchar_t* className;
-};
+using namespace std;
 
 // global collection of windows/threads
 static HINSTANCE g_hInst = NULL;
@@ -153,6 +146,21 @@ static void CreateMorseControls(HWND hWnd)
     );
 
     HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
+    HWND hProg = CreateWindowExW(
+        0,
+        PROGRESS_CLASSW,
+        NULL,
+        WS_CHILD | WS_VISIBLE,
+        radiobuttonX, 400, 240, 20,
+        hWnd,
+        (HMENU)2001,
+        g_hInst,
+        NULL
+    );
+    SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
+    SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
+	SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
+	//SendMessageW(hProg, PBM_STEPIT, 0, 0); // increment position by step amount
 
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
@@ -239,6 +247,9 @@ static int ShowMorseApp()
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
 	g_hInst = hInstance;
+	// Initialize common controls
+    INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
+    InitCommonControlsEx(&icc);
     AttachToConsole();
     int argc = 0;
     wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
