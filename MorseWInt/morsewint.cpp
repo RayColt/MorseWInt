@@ -83,8 +83,12 @@ static void CreateMorseControls(HWND hWnd)
 
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
-    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT", 
+    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, 
+        hWnd, NULL, g_hInst, NULL);
+    
+    HWND hwAVLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 190, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hEdit = CreateWindowExW(
