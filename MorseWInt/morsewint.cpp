@@ -8,8 +8,17 @@
 
 #include <shellapi.h>
 #pragma comment(lib, "Shell32.lib")
-
 using namespace std;
+
+// Structs
+struct ThreadParam
+{
+    RECT rc;
+    // optional: pass as owner so 
+    // overlay/preview behaviors remain
+    HWND ownerForParent;
+     const wchar_t* className;
+};
 
 // global collection of windows/threads
 static HINSTANCE g_hInst = NULL;
@@ -134,7 +143,7 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
-    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"WAVOUT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
+    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
 
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
