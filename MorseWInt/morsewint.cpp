@@ -73,31 +73,84 @@ static void SafeCloseHandle(HANDLE& h)
 
 // ---------------- MorseWInt GUI ----------------
 // IDs
-enum { CID_OK = 100, CID_CANCEL = 101, CID_EDIT_STARS = 110, CID_EDIT_SPEED = 111, CID_PREVIEW = 112, CID_BUTTON_COLOR = 113, CID_LABEL_COLOR = 114 };
+enum { CID_ENCODE= 100, CID_DECODE = 101, CID_EDIT};
 
 // Create child controls on given window
-static void CreateMorseControls(HWND dlg)
+static void CreateMorseControls(HWND hWnd)
 {
-    wstring mst = L"Stars (max " + to_wstring(10) + L"):";
-    wstring msp = L"Speed (max " + to_wstring(20) + L"):";
+    int radiobuttonX = 400;
+
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 
-    HWND hColorLabel = CreateWindowExW(0, L"STATIC", mst.c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, dlg, NULL, g_hInst, NULL);
-    HWND hColorEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT, 150, 8, 80, 20, dlg, (HMENU)CID_EDIT_STARS, g_hInst, NULL);
-    HWND hSpeedLabel = CreateWindowExW(0, L"STATIC", msp.c_str(), WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 40, 120, 18, dlg, NULL, g_hInst, NULL);
-    HWND hSpeedEdit = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT, 150, 38, 80, 20, dlg, (HMENU)CID_EDIT_SPEED, g_hInst, NULL);
-    HWND hColorButton = CreateWindowExW(0, L"BUTTON", L"Pick color", WS_CHILD | WS_VISIBLE, 250, 6, 80, 20, dlg, (HMENU)CID_BUTTON_COLOR, g_hInst, NULL);
-    CreateWindowExW(0, L"STATIC", L"     ", WS_CHILD | WS_VISIBLE | SS_SIMPLE | SS_BLACKFRAME, 250, 38, 80, 20, dlg, (HMENU)CID_LABEL_COLOR, g_hInst, NULL);
-    HWND hOkButton = CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 80, 70, 80, 24, dlg, (HMENU)CID_OK, g_hInst, NULL);
-    HWND hCancelButton = CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 168, 70, 80, 24, dlg, (HMENU)CID_CANCEL, g_hInst, NULL);
+    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT", 
+        WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, 
+        hWnd, NULL, g_hInst, NULL);
 
-    SendMessageW(hColorLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hColorEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hSpeedLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hSpeedEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hColorButton, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hOkButton, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hCancelButton, WM_SETFONT, (WPARAM)hFont, TRUE);
+    CreateWindowExW(
+        0, L"BUTTON", L"Morse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 40, 120, 20,
+        hWnd, (HMENU)1001, g_hInst, NULL
+    );
+
+    CreateWindowExW(
+        0, L"BUTTON", L"BinMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 65, 120, 20,
+        hWnd, (HMENU)1002, g_hInst, NULL
+    );
+
+    CreateWindowExW(
+        0, L"BUTTON", L"HexMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 90, 120, 20,
+        hWnd, (HMENU)1003, g_hInst, NULL
+    );
+
+    CreateWindowExW(
+        0, L"BUTTON", L"HexBinMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 115, 120, 20,
+        hWnd, (HMENU)1004, g_hInst, NULL
+    );
+
+    CreateWindowExW(
+        0, L"BUTTON", L"Morse to Wav(s)",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 140, 120, 20,
+        hWnd, (HMENU)1004, g_hInst, NULL
+    );
+
+    CreateWindowExW(
+        0, L"BUTTON", L"Morse to Wav(m)",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, 165, 120, 20,
+        hWnd, (HMENU)1004, g_hInst, NULL
+    );
+
+    HWND hEdit = CreateWindowExW(
+        WS_EX_CLIENTEDGE,
+        L"EDIT",
+        NULL,
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN |
+        WS_VSCROLL,
+        20, 40, 300, 300,      // bigger size for multiline
+        hWnd,
+        (HMENU)CID_EDIT,
+        g_hInst,
+        NULL
+    );
+
+    HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
+    HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
+
+    SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+   
+    SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
 }
 
 // Morse window proc handles control actions and closes window
@@ -113,21 +166,38 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         case WM_COMMAND:
         {
             int id = LOWORD(wParam);
-            if (id == CID_OK)
+            if (id == CID_ENCODE)
             {
-                BOOL ok;
-                int stars = GetDlgItemInt(hWnd, CID_EDIT_STARS, &ok, FALSE);
+
 
                 DestroyWindow(hWnd);
                 return 0;
             }
-            else if (id == CID_CANCEL)
+            else if (id == CID_DECODE)
             {
                 DestroyWindow(hWnd);
                 return 0;
             }
             break;
         }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hWnd, &ps);
+
+            HPEN hPen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
+            HPEN old = (HPEN)SelectObject(hdc, hPen);
+
+            // Example group frame
+            Rectangle(hdc, 20, 20, 300, 150);
+
+            SelectObject(hdc, old);
+            DeleteObject(hPen);
+
+            EndPaint(hWnd, &ps);
+			return 0;
+        }
+
         case WM_DESTROY:
         {
             PostQuitMessage(0);
@@ -139,8 +209,6 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         return 0;
 }
 
-
-
 static int ShowMorseApp()
 {
     HINSTANCE hInst = GetModuleHandle(nullptr);
@@ -148,7 +216,7 @@ static int ShowMorseApp()
     WNDCLASS wc = {};
     wc.lpfnWndProc = MorseWIntWndProc;
     wc.hInstance = hInst;
-    wc.lpszClassName = L"MorseWindowClass";
+    wc.lpszClassName = L"MorseWIntWindowClass";
 
     RegisterClass(&wc);
 
@@ -187,25 +255,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }
     if (mode == 'p')
     {
-        if (argH)
-        {
-            LocalFree(argv);
-            return 0;
-        }
+        Morse m;
+        string ss = m.morse_encode("sos ss");
+        printf(ss.c_str());
+        MessageBoxA(NULL, ss.c_str(), "Test", MB_OK);
     }
     if (mode == 'm')
     {
-		Morse m;
-		string ss = m.morse_encode("sos ss");
-        printf(ss.c_str());
-        MessageBoxA(NULL, ss.c_str(), "Test", MB_OK);
-        if (argH)
-        {
-			printf ("hello morse\n");
-            
-
-            return 0;
-        }
+        ShowMorseApp();
     }
     if (mode == 'w')
     {
