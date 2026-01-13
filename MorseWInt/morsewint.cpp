@@ -8,17 +8,8 @@
 
 #include <shellapi.h>
 #pragma comment(lib, "Shell32.lib")
-using namespace std;
 
-// Structs
-struct ThreadParam
-{
-    RECT rc;
-    // optional: pass as owner so 
-    // overlay/preview behaviors remain
-    HWND ownerForParent;
-     const wchar_t* className;
-};
+using namespace std;
 
 // global collection of windows/threads
 static HINSTANCE g_hInst = NULL;
@@ -73,7 +64,8 @@ static void SafeCloseHandle(HANDLE& h)
 
 // ---------------- MorseWInt GUI ----------------
 
-enum { CID_ENCODE= 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_SOUND};
+enum {
+	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109 };
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
@@ -99,7 +91,7 @@ static void CreateMorseControls(HWND hWnd)
         g_hInst,
         NULL
     );
-
+    
     CreateWindowExW(
         0, L"BUTTON", L"Morse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
@@ -141,21 +133,8 @@ static void CreateMorseControls(HWND hWnd)
         radiobuttonX, 165, 165, 20,
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
-	// TODO: SOUND control visible?
-    HWND hSound = CreateWindowExW(
-        WS_EX_CLIENTEDGE,
-        L"SOUND",
-        NULL,
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP |
-        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN |
-        WS_VSCROLL,
-        radiobuttonX, 190, 165, 100,
-        hWnd,
-        (HMENU)CID_SOUND,
-        g_hInst,
-        NULL
-    );
 
+    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"WAVOUT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
 
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
@@ -164,7 +143,7 @@ static void CreateMorseControls(HWND hWnd)
 
    
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hSound, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
 }
