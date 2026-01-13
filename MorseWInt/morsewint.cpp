@@ -957,6 +957,16 @@ static void StopAllThreadsAndCleanup()
     }
     g_Windows.clear();
 }
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
+}
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
@@ -1001,6 +1011,41 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             return 0;
         }
+    }
+    if (mode == 'w')
+    {
+
+
+            HINSTANCE hInst = GetModuleHandle(nullptr);
+
+            WNDCLASS wc = {};
+            wc.lpfnWndProc = WndProc;
+            wc.hInstance = hInst;
+            wc.lpszClassName = L"MyWindowClass";
+
+            RegisterClass(&wc);
+
+            HWND hwnd = CreateWindow(
+                wc.lpszClassName,
+                L"My Window",
+                WS_OVERLAPPEDWINDOW,
+                CW_USEDEFAULT, CW_USEDEFAULT,
+                640, 480,
+                nullptr, nullptr, hInst, nullptr
+            );
+
+            ShowWindow(hwnd, SW_SHOW);
+
+            MSG msg;
+            while (GetMessage(&msg, nullptr, 0, 0))
+            {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+
+            }
+        return 0;
+
+
     }
     // Default: fullscreen
     g_Running = true;
