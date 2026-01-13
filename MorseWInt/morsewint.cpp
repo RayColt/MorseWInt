@@ -1,5 +1,8 @@
 /**
-* MorseWInt.cpp : Defines the entry point for the application.
+* MorseWInt.cpp 
+* International Morse Code Encoder/Decoder with GUI and Command Line Interface
+* @author RAY COLT
+* @version 007
 */
 #include <windows.h>
 #include <random>
