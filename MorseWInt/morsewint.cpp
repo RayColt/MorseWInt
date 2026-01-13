@@ -1,7 +1,7 @@
 /**
 * MorseWInt.cpp 
 * 
-* International Morse Code Encoder/Decoder/Wav creator with GUI and Command Line Interface
+* International Morse Code Encoder/Decoder/Wav creator with GUI and Command Line Interface in One!
 * 
 * @author RAY COLT
 * @version 007
