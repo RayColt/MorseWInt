@@ -1,20 +1,11 @@
-/*
-* MyStarfield.cpp
-* Threaded MyStarfield: one render thread per monitor/window.
-* Build as Windows GUI with Console Entry point with:
-* - Linker/SubSystem/Windows/(/SUBSYSTEM:WINDOWS)
-* - C/C++/Preprocessor/Preprocessor Definitions/(WIN32;DEBUG;_CONSOLE;)
-* 
-* Copy generated MyStarfield.scr in Debug directory to C:\Windows\System32
-* 
-* If you experience some latencies lower down the amount of stars and speed,
-* use settings like g_MaxStars=200 and g_MaxSpeed=20, only the Win32 API is used.
+/**
+* MorseWInt.cpp : Defines the entry point for the application.
 */
 #include <windows.h>
 #include <random>
 #include <string>
 #include "morse.h"
-#include <stdio.h>
+
 #include <shellapi.h>
 #pragma comment(lib, "Shell32.lib")
 using namespace std;
