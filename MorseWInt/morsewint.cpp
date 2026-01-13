@@ -161,8 +161,8 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
 	SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
 	//SendMessageW(hProg, PBM_STEPIT, 0, 0); // increment position by step amount
-    SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
-    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
+    //SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
+   // SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
 
 
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
