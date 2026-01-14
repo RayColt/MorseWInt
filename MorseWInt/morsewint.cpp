@@ -169,32 +169,6 @@ void AttachToConsole()
     }
 }
 
-static void ParseArgs(int argc, wchar_t** argv, wchar_t& modeOut, HWND& hwndOut)
-{
-    modeOut = 0;
-    hwndOut = NULL;
-    if (argc <= 1) return;
-    wstring a1 = argv[1];
-    if (a1.size() >= 2 && (a1[0] == L'/' || a1[0] == L'-'))
-    {
-        wchar_t c = towlower(a1[1]);
-        modeOut = c;
-        size_t colon = a1.find(L':');
-        if (colon != wstring::npos)
-        {
-            wstring num = a1.substr(colon + 1);
-            if (!num.empty()) hwndOut = (HWND)_wcstoui64(num.c_str(), nullptr, 0);
-        }
-        else if (argc >= 3)
-        {
-            wstring a2 = argv[2];
-            bool numeric = !a2.empty();
-            for (wchar_t ch : a2) if (!iswdigit(ch)) { numeric = false; break; }
-            if (numeric) hwndOut = (HWND)_wcstoui64(a2.c_str(), nullptr, 0);
-        }
-    }
-}
-
 static void SafeCloseHandle(HANDLE& h) 
 {
     if (h) 
@@ -382,13 +356,43 @@ static int ShowMorseApp()
     return 0;
 }
 
+// Get current console cursor position
+COORD GetConsoleCursorPosition(HANDLE hConsoleOutput)
+{
+    CONSOLE_SCREEN_BUFFER_INFO cbsi;
+    if (GetConsoleScreenBufferInfo(hConsoleOutput, &cbsi))
+    {
+        return cbsi.dwCursorPosition;
+    }
+    else
+    {
+        COORD invalid = { 0, 0 };
+        return invalid;
+    }
+}
+
+// Set console cursor position
+void SetCursorPosition(int yposition)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD currpos = GetConsoleCursorPosition(hConsole);
+    int ypos = currpos.Y + yposition;
+    COORD position = { currpos.X, ypos };
+    SetConsoleCursorPosition(hConsole, position);
+}
+
+
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
+    // clear console
+    system("cls");
 	g_hInst = hInstance;
-	// Initialize common controls like progress bar
+	// initialize progress bar
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
     InitCommonControlsEx(&icc);
     AttachToConsole();
+    //AttachConsole(ATTACH_PARENT_PROCESS);
 
     int argc = 0;
     LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -527,25 +531,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-        cout << "Press Enter key to close program . . .";
-        //int c = getchar();
-        // clear console
-        //system("cls");
-       // return 0;
+
+       cout << "Press Enter key to close program . . .\n";
+
+       int c = getchar();
+
+        //SetCursorPosition(4);
+        // Send an 'Enter' key press to the parent console to restore the prompt
+        //PostMessage(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0);
+       return 0;
     }
     else
     {
         ShowMorseApp();
     }
 
-    // When done, free all allocated buffers and arrays
+    // when done, free all allocated buffers and arrays
     for (int i = 0; i < argc_start; ++i) 
     {
         free(argv_start[i]);   // safe even if argv was advanced
     }
+
     free(argv_start);
     LocalFree(wargv);
-    // clear console
-    //system("cls");
     return 0;
 }

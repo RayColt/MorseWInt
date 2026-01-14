@@ -7,7 +7,7 @@ using namespace std;
 /**
 * Constructor
 */
-MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus) :     
+MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus) :
     MorseCode(morsecode),
     NumChannels(modus),
     Wpm(wpm),

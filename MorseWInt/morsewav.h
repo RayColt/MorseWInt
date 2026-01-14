@@ -38,7 +38,7 @@ private:
 	long PcmCount;             // number of PCM samples
 	long WaveSize;             // size of the wave file in bytes
 	double Amplitude = 0.8;    // 80% of max volume (0.0 to 1.0)
-
+	
 public:
 	/**
 	* Constructor / Destructor
