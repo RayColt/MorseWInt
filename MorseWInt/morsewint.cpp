@@ -30,6 +30,15 @@ const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 
 /**
+* Set action from menu
+*/
+string action = "";
+void SetAction(string a)
+{
+    action = a;
+}
+
+/**
 * Create Safe morse settings
 */
 static void MakeMorseSafe(Morse& morse)
@@ -43,7 +52,7 @@ static void MakeMorseSafe(Morse& morse)
 }
 
 // Convert LPWSTR array to vector<string> (UTF-8)
-static std::vector<std::string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArglist)
+static vector<string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArglist)
 {
     std::vector<std::string> utf8_args;
     utf8_args.reserve(argc);
@@ -54,8 +63,7 @@ static std::vector<std::string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArg
         if (!w) { utf8_args.emplace_back(); continue; }
 
         // Get required buffer size (including null)
-        int size_needed = WideCharToMultiByte(
-            CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
 
         if (size_needed <= 0)
         {
@@ -64,24 +72,12 @@ static std::vector<std::string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArg
             continue;
         }
 
-        std::string s;
+        string s;
         s.resize(size_needed - 1); // exclude terminating null in std::string
-        WideCharToMultiByte(
-            CP_UTF8, 0, w, -1, s.data(), size_needed, nullptr, nullptr);
-
+        WideCharToMultiByte(CP_UTF8, 0, w, -1, s.data(), size_needed, nullptr, nullptr);
         utf8_args.push_back(std::move(s));
     }
-
     return utf8_args;
-}
-
-/**
-* Set action from menu
-*/
-string action = "";
-void SetAction(string a)
-{
-    action = a;
 }
 
 /**
@@ -356,37 +352,20 @@ static int ShowMorseApp()
     return 0;
 }
 
-// Get current console cursor position
-COORD GetConsoleCursorPosition(HANDLE hConsoleOutput)
+static void PrintWavInfo(string path , double Sps, double Tone, int Wpm, double WaveSize, long PcmCount)
 {
-    CONSOLE_SCREEN_BUFFER_INFO cbsi;
-    if (GetConsoleScreenBufferInfo(hConsoleOutput, &cbsi))
-    {
-        return cbsi.dwCursorPosition;
-    }
-    else
-    {
-        COORD invalid = { 0, 0 };
-        return invalid;
-    }
+    double Eps = Wpm / 1.2;
+	cout << "wave: " << Sps << " Hz (-sps:" << Sps << ")\n";
+	cout << "tone: " << Tone << " Hz (-tone:" << Tone << ")\n";
+	cout << "code: " << Eps << " Hz (-wpm:" << Wpm << ")\n";
+
+	cout << PcmCount << " PCM samples";
+	cout << " (" << (double)PcmCount / Sps << " s @ " << Sps / 1e3 << " kHz)";
+	cout << " written to " << path << " (" << WaveSize / 1024.0 << " kB)\n";
 }
-
-// Set console cursor position
-void SetCursorPosition(int yposition)
-{
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    COORD currpos = GetConsoleCursorPosition(hConsole);
-    int ypos = currpos.Y + yposition;
-    COORD position = { currpos.X, ypos };
-    SetConsoleCursorPosition(hConsole, position);
-}
-
-
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
-    // clear console
-    system("cls");
 	g_hInst = hInstance;
 	// initialize progress bar
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
@@ -509,10 +488,24 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             if (action == "wav")
             {
                 MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2);
+                //PrintWavInfo(mw.GetSavePath(), sps, m.frequency_in_hertz, m.words_per_minute, mw.GetWaveSize(), mw.GetPcmCount());
+			//TODO: this part back MorseWav class
+
+                    double Eps = m.words_per_minute / 1.2;
+                    cout << "wave: " << sps << " Hz (-sps:" << sps << ")\n";
+                    cout << "tone: " << m.frequency_in_hertz << " Hz (-tone:" << m.frequency_in_hertz << ")\n";
+                    cout << "code: " << Eps << " Hz (-wpm:" << m.words_per_minute << ")\n";
+
+                    cout << mw.GetPcmCount() << " PCM samples";
+                    cout << " (" << (mw.GetPcmCount() / sps) << " s @ " << sps / 1e3 << " kHz)";
+                    cout << " written to " << mw.GetFullPath() << " (" << mw.GetWaveSize() / 1024.0 << " kB)\n";
+                   
+
             }
             else if (action == "wav_mono")
             {
                 MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1);
+                PrintWavInfo(mw.GetFullPath(), sps, m.frequency_in_hertz, m.words_per_minute, mw.GetWaveSize(), mw.GetPcmCount());
             }
             else
             {
@@ -531,14 +524,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-
-       cout << "Press Enter key to close program . . .\n";
-
+       cout << "Press 3X Enter key to close program . . .\n";
        int c = getchar();
-
-        //SetCursorPosition(4);
-        // Send an 'Enter' key press to the parent console to restore the prompt
-        //PostMessage(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0);
+      // system("cls");
        return 0;
     }
     else

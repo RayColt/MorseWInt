@@ -14,27 +14,24 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     Tone(tone),
     Sps(samples_per_second),
     PcmCount(0),
-	WaveSize(0)
+	WaveSize(0),
+	FullPath("")
 {
-    string filename = "morse_";
-    filename += to_string(time(NULL));
-    filename += ".wav";
-    string fp = SaveDir + filename;
-
     // Note 60 seconds = 1 minute and 50 elements = 1 morse word.
     Eps = Wpm / 1.2;    // elements per second (frequency of morse coding)
     Bit = 1.2 / Wpm;    // seconds per element (period of morse coding)
     
-    printf("wave: %9.3lf Hz (-sps:%lg)\n", Sps, Sps);
-    printf("tone: %9.3lf Hz (-tone:%lg)\n", Tone, Tone);
-    printf("code: %9.3lf Hz (-wpm:%lg)\n", Eps, Wpm);
+    //printf("wave: %9.3lf Hz (-sps:%lg)\n", Sps, Sps);
+    //printf("tone: %9.3lf Hz (-tone:%lg)\n", Tone, Tone);
+    //printf("code: %9.3lf Hz (-wpm:%lg)\n", Eps, Wpm);
 
+    FullPath  = MorseWav::GetFullPath();
     MorseWav::MorseTones(MorseCode);
-    MorseWav::WriteWav(filename.c_str(), pcm);
+    MorseWav::WriteWav(pcm);
 
-    printf("%ld PCM samples", PcmCount);
-    printf(" (%.1lf s @ %.1lf kHz)", (double)PcmCount / Sps, Sps / 1e3);
-    printf(" written to %s (%.1f kB)\n", fp.c_str(), WaveSize / 1024.0);
+    //printf("%ld PCM samples", PcmCount);
+    //printf(" (%.1lf s @ %.1lf kHz)", (double)PcmCount / Sps, Sps / 1e3);
+    //printf(" written to %s (%.1f kB)\n", fp.c_str(), WaveSize / 1024.0);
 
     if (1)
     {
@@ -46,10 +43,27 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
         const char* c = str.c_str();
         printf("** %s\n", c);
         system(c);*/
-        ShellExecuteA(NULL, "open", fp.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteA(NULL, "open", FullPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
     }
 }
 
+string MorseWav::GetFullPath()
+{
+    string filename = "morse_";
+    filename += to_string(time(NULL));
+    filename += ".wav";
+
+    string fullpath = SaveDir + filename;
+	return fullpath;
+}
+long MorseWav::GetPcmCount()
+{
+    return PcmCount;
+}
+long MorseWav::GetWaveSize()
+{
+    return WaveSize;
+}
 /**
 * Get binary morse code (dit/dah) for a given character.
 * Generate one quantum of silence or tone in PCM/WAV array.
@@ -148,7 +162,7 @@ typedef struct _wave
 * @param filename
 * @param pcmData
 */
-void MorseWav::WriteWav(const char* filename, const std::vector<int16_t> &pcmdata)
+void MorseWav::WriteWav(const std::vector<int16_t> &pcmdata)
 {
     long data_size, wave_size, riff_size;
     int fmt_size = 16;
@@ -171,25 +185,25 @@ void MorseWav::WriteWav(const char* filename, const std::vector<int16_t> &pcmdat
     // Try to create the directory
     if (_mkdir(SaveDir.c_str()) == 0)
     {
-        cerr << "Directory created successfully.\n";
+        //cerr << "Directory created successfully.\n";
     }
     else
     {
         if (errno == EEXIST)
         {
-            cerr << "Directory already exists.\n";
+            //cerr << "Directory already exists.\n";
         }
         else
         {
-            cerr << "Error creating directory\n";
+            //cerr << "Error creating directory\n";
             exit(1);
         }
     }
     // Open file for binary writing
-    ofstream out((SaveDir + filename), std::ios::binary);
+    ofstream out(FullPath, std::ios::binary);
     if (!out.is_open())
     {
-        cerr << "Failed to open file: " << SaveDir + filename << '\n';
+        //cerr << "Failed to open file: " << SaveDir + filename << '\n';
         // optionally inspect errno: std::perror("open");
         exit(1);
     }
