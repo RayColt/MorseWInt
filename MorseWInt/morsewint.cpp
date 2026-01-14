@@ -10,6 +10,9 @@
 #include <random>
 #include <string>
 #include "morse.h"
+#include "help.h"
+#include "morsewav.h"
+
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
 
@@ -18,8 +21,140 @@
 
 using namespace std;
 
-// global collection of windows/threads
+
 static HINSTANCE g_hInst = NULL;
+Morse m;
+
+const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
+const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
+const int MAX_SOUND_INPUT = 750; // max chars for sound generation
+
+/**
+* Create Safe morse settings
+*/
+static void MakeMorseSafe(Morse& morse)
+{
+    if (morse.samples_per_second < 8000.0) morse.samples_per_second = 8000.0;
+    if (morse.samples_per_second > 48000) morse.samples_per_second = 48000.0;
+    if (morse.frequency_in_hertz < 20.0) morse.frequency_in_hertz = 20.0;
+    if (morse.frequency_in_hertz > 8000.0) morse.frequency_in_hertz = 8000.0;
+    if (morse.words_per_minute < 0.0) morse.words_per_minute = 0.0;
+    if (morse.words_per_minute > 50.0) morse.words_per_minute = 50.0;
+}
+
+// Convert LPWSTR array to vector<string> (UTF-8)
+static std::vector<std::string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArglist)
+{
+    std::vector<std::string> utf8_args;
+    utf8_args.reserve(argc);
+
+    for (int i = 0; i < argc; ++i)
+    {
+        LPWSTR w = szArglist[i];
+        if (!w) { utf8_args.emplace_back(); continue; }
+
+        // Get required buffer size (including null)
+        int size_needed = WideCharToMultiByte(
+            CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
+
+        if (size_needed <= 0)
+        {
+            // fallback to empty string on error
+            utf8_args.emplace_back();
+            continue;
+        }
+
+        std::string s;
+        s.resize(size_needed - 1); // exclude terminating null in std::string
+        WideCharToMultiByte(
+            CP_UTF8, 0, w, -1, s.data(), size_needed, nullptr, nullptr);
+
+        utf8_args.push_back(std::move(s));
+    }
+
+    return utf8_args;
+}
+
+/**
+* Set action from menu
+*/
+string action = "";
+void SetAction(string a)
+{
+    action = a;
+}
+
+/**
+* Reaf cmd line user arguments
+*
+* @param argc
+* @param argv[]
+* @return int
+*/
+int get_options(int argc, char* argv[])
+{
+    int args = 0;
+    bool ok = false;
+    if (strncmp(argv[1], "e", 1) == 0 || strncmp(argv[1], "b", 1) == 0 || strncmp(argv[1], "d", 1) == 0 ||
+        strncmp(argv[1], "he", 2) == 0 || strncmp(argv[1], "hd", 2) == 0 || strncmp(argv[1], "hb", 2) == 0 ||
+        strncmp(argv[1], "hbd", 3) == 0)
+    {
+        ok = true;
+    }
+    if (strncmp(argv[1], "-help", 5) == 0 || strncmp(argv[1], "-h", 2) == 0)
+    {
+        cout << Help::GetHelpTxt();
+        ok = true;
+    }
+    else if (ok)
+    {
+        while (argc > 1)
+        {
+            if (strncmp(argv[2], "-hz:", 4) == 0)
+            {
+                m.frequency_in_hertz = atof(&argv[2][4]);
+            }
+            else if (strncmp(argv[2], "-wpm:", 5) == 0)
+            {
+                m.words_per_minute = atof(&argv[2][5]);
+            }
+            else if (strncmp(argv[2], "-sps:", 5) == 0)
+            {
+                m.samples_per_second = atof(&argv[2][5]);
+            }
+            else
+            {
+                break;
+            }
+            argc -= 1;
+            argv += 1;
+            args += 1;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "option error %s, see morse -help for info\n", argv[2]);
+        exit(1);
+    }
+    return args;
+}
+
+/**
+* Generate string from arguments
+* @param arg
+*
+* @return string
+*/
+string arg_string(char* arg)
+{
+    char c; string str;
+    while ((c = *arg++) != '\0')
+    {
+        str += c;
+    }
+    str += " ";
+    return str;
+}
 
 // Utilities
 void AttachToConsole()
@@ -250,39 +385,167 @@ static int ShowMorseApp()
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
 	g_hInst = hInstance;
-	// Initialize common controls
+	// Initialize common controls like progress bar
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
     InitCommonControlsEx(&icc);
     AttachToConsole();
+
     int argc = 0;
-    wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    wchar_t mode = 0;
+    LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    if (!wargv) 
+    {
+        ShowMorseApp();
+    }
+
+    // Choose code page: CP_UTF8 for UTF-8, or CP_ACP for ANSI
+    const UINT CODE_PAGE = CP_UTF8;
+
+    // allocate array of char* (will own pointers to each C string)
+    char** argv = (char**)malloc(sizeof(char*) * argc);
+    if (!argv) 
+    {
+        LocalFree(wargv);
+        fprintf(stderr, "malloc failed\n");
+        return 1;
+    }
+
+    // convert each wide string to a newly allocated char* buffer
+    for (int i = 0; i < argc; ++i) 
+    {
+        LPWSTR w = wargv[i];
+        if (!w) 
+        {
+            argv[i] = nullptr;
+            continue;
+        }
+
+        // get required size including null terminator
+        int needed = WideCharToMultiByte(CODE_PAGE, 0, w, -1, nullptr, 0, nullptr, nullptr);
+        if (needed <= 0) 
+        {
+            argv[i] = nullptr;
+            continue;
+        }
+
+        char* buf = (char*)malloc(needed);
+        if (!buf) 
+        {
+            // cleanup on partial failure
+            for (int j = 0; j < i; ++j) free(argv[j]);
+            free(argv);
+            LocalFree(wargv);
+            fprintf(stderr, "malloc failed for arg %d\n", i);
+            return 1;
+        }
+
+        WideCharToMultiByte(CODE_PAGE, 0, w, -1, buf, needed, nullptr, nullptr);
+        argv[i] = buf;
+    }
+
+    // keep original pointer so we can free later even if argv is advanced
+    char** argv_start = argv;
+    int argc_start = argc;
+	
+    // parse arguments
     HWND argH = NULL;
-    ParseArgs(argc, argv, mode, argH);
+    int n;
+    double sps = 44100;
+    if (argc != 1)
     {
-        char buf[256]{};
+        if (strcmp(argv[1], "es") == 0) { action = "sound"; }
+        else if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
+        else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
+        else if (strcmp(argv[1], "e") == 0) { action = "encode"; }
+        else if (strcmp(argv[1], "d") == 0) { action = "decode"; }
+        else if (strcmp(argv[1], "b") == 0) { action = "binary"; }
+        else if (strcmp(argv[1], "he") == 0) { action = "hex"; }
+        else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; }
+        else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; }
+        else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; }
+        // check options
+        n = get_options(argc, argv);
+        argc -= n;
+        argv += n;
+        // generate morse code
+        string arg_in;
+        // choose max allowed chars based on requested action
+        int max_chars = MAX_TXT_INPUT;
+        if (action == "decode") max_chars = MAX_MORSE_INPUT;
+        else if (action == "sound" || action == "wav" || action == "wav_mono") max_chars = MAX_SOUND_INPUT;
+
+        // collect arguments but never exceed max_chars
+        while (argc > 2 && static_cast<int>(arg_in.size()) < max_chars)
+        {
+            string part = arg_string(argv[2]);
+            int remaining = max_chars - static_cast<int>(arg_in.size());
+            if (remaining <= 0) break; // nothing more allowed
+            if (static_cast<int>(part.size()) > remaining)
+            {
+                part = part.substr(0, remaining);
+                cerr << "Maximum input size reached (" << max_chars << " characters).\n";
+            }
+            arg_in += part;
+            argc -= 1;
+            argv += 1;
+        }
+
+        if (action == "encode") { cout << m.morse_encode(arg_in) << "\n"; }
+        else if (action == "binary") { cout << m.morse_binary(arg_in) << "\n"; }
+        else if (action == "decode") { cout << m.morse_decode(arg_in) << "\n"; }
+        else if (action == "hex") { cout << m.bin_morse_hexdecimal(arg_in, 0) << "\n"; }
+        else if (action == "hexdec") { cout << m.hexdecimal_bin_txt(arg_in, 0) << "\n"; }
+        else if (action == "hexbin") { cout << m.bin_morse_hexdecimal(arg_in, 1) << "\n"; }
+        else if (action == "hexbindec") { cout << m.hexdecimal_bin_txt(arg_in, 1) << "\n"; }
+        else if (action == "sound" || action == "wav" || action == "wav_mono")
+        {
+            string morse = m.morse_encode(arg_in);
+            cout << morse << "\n";
+            MakeMorseSafe(m);
+
+            if (action == "wav")
+            {
+                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2);
+            }
+            else if (action == "wav_mono")
+            {
+                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1);
+            }
+            else
+            {
+                int size = (int)morse.size();
+                printf("wave: %9.3lf Hz (-sps:%lg)\n", sps, sps);
+                printf("tone: %9.3lf Hz (-tone:%lg)\n", m.frequency_in_hertz, m.frequency_in_hertz);
+                printf("code: %9.3lf Hz (-wpm:%lg)\n", m.words_per_minute / 1.2, m.words_per_minute);
+                cout << "to be able to change sound settings, choose sound to wav file\n";
+                for (size_t i = 0; i < size; ++i)
+                {
+                    char c = morse.at(i);
+                    string s(1, c);
+                    if (s == ".") Beep((DWORD)m.frequency_in_hertz, (DWORD)(1 * m.duration_milliseconds(m.words_per_minute)));
+                    if (s == "-") Beep((DWORD)m.frequency_in_hertz, (DWORD)(3 * m.duration_milliseconds(m.words_per_minute)));
+                    if (s == " ") Beep(0, (DWORD)(3.5 * m.duration_milliseconds(m.words_per_minute)));
+                }
+            }
+        }
+        cout << "Press Enter key to close program . . .";
+        //int c = getchar();
+        // clear console
+        //system("cls");
+       // return 0;
     }
-    if (mode == 'p')
-    {
-        Morse m;
-        string ss = m.morse_encode("sos ss");
-        printf(ss.c_str());
-        MessageBoxA(NULL, ss.c_str(), "Test", MB_OK);
-    }
-    if (mode == 'm')
+    else
     {
         ShowMorseApp();
     }
-    if (mode == 'w')
+
+    // When done, free all allocated buffers and arrays
+    for (int i = 0; i < argc_start; ++i) 
     {
-
-        ShowMorseApp();
-
-        return 0;
-
-
+        free(argv_start[i]);   // safe even if argv was advanced
     }
-
-    LocalFree(argv);
+    free(argv_start);
+    LocalFree(wargv);
+    // clear console
+    //system("cls");
     return 0;
 }

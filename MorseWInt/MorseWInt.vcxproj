@@ -22,14 +22,18 @@
     <Image Include="MorseWInt.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="help.h" />
     <ClInclude Include="morse.h" />
+    <ClInclude Include="morsewav.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MorseWInt.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Help.cpp" />
     <ClCompile Include="Morse.cpp" />
+    <ClCompile Include="MorseWav.cpp" />
     <ClCompile Include="morsewint.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
