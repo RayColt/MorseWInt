@@ -24,7 +24,7 @@ const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with visible media pl
 
 // global variables
 HWND g_hWnd = NULL; // global window handle
-static HINSTANCE g_hInst = NULL; // global instance handle
+static HINSTANCE g_hInst = GetModuleHandle(nullptr); // global instance handle 
 Morse m; // global morse settings
 string action = ""; // global action setting
 
@@ -345,33 +345,38 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                else if (b2)
                {
                    tmp = m.morse_binary(WStringToString(in));
                    out = StringToWString(tmp);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                else if (b3)
                {
                    tmp = m.bin_morse_hexdecimal(WStringToString(in), 0);
                    out = StringToWString(tmp);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                else if (b4)
                {
                    tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
                    out = StringToWString(tmp);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                else if (b5)
                {
                    tmp = m.morse_encode(WStringToString(in));
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                }
                else if (b6)
                {
                    tmp = m.morse_encode(WStringToString(in));
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                }
-               SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                return 0;
             }
             else if (id == CID_DECODE && code == BN_CLICKED)
@@ -427,11 +432,9 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 static int ShowMorseApp(HWND &hwnd)
 {
-    HINSTANCE hInst = GetModuleHandle(nullptr);
-
     WNDCLASS wc = {};
     wc.lpfnWndProc = MorseWIntWndProc;
-    wc.hInstance = hInst;
+    wc.hInstance = g_hInst;
     wc.lpszClassName = L"MorseWIntWindowClass";
 
     RegisterClass(&wc);
@@ -442,7 +445,7 @@ static int ShowMorseApp(HWND &hwnd)
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         700, 460,
-        nullptr, nullptr, hInst, nullptr
+        nullptr, nullptr, g_hInst, nullptr
     );
 
     ShowWindow(hwnd, SW_SHOW);
@@ -596,7 +599,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     {
 		// GUI mode
         ShowMorseApp(g_hWnd);
-        SetFocus(hEdit);
+        int i = 0;
+       // SetFocus(hEdit);
     }
 
     // when done, free all allocated buffers and arrays
