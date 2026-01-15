@@ -157,7 +157,7 @@ static void CreateMorseControls(HWND hWnd)
 	
     // create labels
     HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT:", 
-        WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, 
+        WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
 
     // create labels
