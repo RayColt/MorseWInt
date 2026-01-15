@@ -251,7 +251,7 @@ static void CreateMorseControls(HWND hWnd)
         g_hInst,
         NULL
     );
-
+    // TODO: add pprogress bar
 	// Initialize progress bar
     SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
@@ -366,7 +366,8 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    out = StringToWString(tmp);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
-               else if (b5)
+               // TODO: add output wav creations output edit 
+               else if (b5) // TODO: debug output wav creations edit 
                {
                    tmp = m.morse_encode(WStringToString(in));
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
@@ -387,7 +388,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str()); // TODO: debug output decodes
                 }
                 else if (b2)
                 {
