@@ -53,12 +53,11 @@ static void MakeMorseSafe(Morse& morse)
 int get_options(int argc, char* argv[])
 {
     int args = 0;
-    bool ok = true;
+    bool ok = false;
     // check for valid mode
     if (strncmp(argv[1], "e", 1) == 0 || strncmp(argv[1], "b", 1) == 0 || strncmp(argv[1], "d", 1) == 0 ||
         strncmp(argv[1], "he", 2) == 0 || strncmp(argv[1], "hd", 2) == 0 || strncmp(argv[1], "hb", 2) == 0 ||
-        strncmp(argv[1], "hbd", 3) == 0 || strncmp(argv[1], "ew", 2) == 0 || strncmp(argv[1], "ewm", 3) == 0 ||
-        strncmp(argv[1], "es", 2) == 0)
+        strncmp(argv[1], "hbd", 3) == 0)
     {
         ok = true;
     }
