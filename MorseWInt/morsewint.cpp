@@ -387,21 +387,25 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                 }
                 else if (b2)
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                 }
                 else if (b3)
                 {
                     tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
                     out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                 }
                 else if (b4)
                 {
                     tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
                     out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
                 }
                 return 0;
             }
