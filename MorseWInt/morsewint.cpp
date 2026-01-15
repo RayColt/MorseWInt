@@ -332,7 +332,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             else if(IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
-            else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b7 = true; }
+
 
             wstring in = GetTextFromEditField(hEdit);
             string tmp;
@@ -360,6 +360,16 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                {
                    tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
                    out = StringToWString(tmp);
+               }
+               else if (b5)
+               {
+                   tmp = m.morse_encode(WStringToString(in));
+                   MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+               }
+               else if (b6)
+               {
+                   tmp = m.morse_encode(WStringToString(in));
+                   MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
                }
                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                return 0;
@@ -579,7 +589,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             }
         }
        //cout << "Press [Enter] key to close program . . .\n";
-      // int c = getchar();
+        int c = getchar();
        return 0;
     }
     else
