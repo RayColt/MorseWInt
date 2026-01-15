@@ -495,7 +495,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-       cout << "Press [Enter] key to close program . . .\n";
+       //cout << "Press [Enter] key to close program . . .\n";
        int c = getchar();
        return 0;
     }
