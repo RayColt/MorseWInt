@@ -25,6 +25,10 @@ using namespace std;
 static HINSTANCE g_hInst = NULL;
 Morse m;
 
+// set to true to open new output console window - less buggy
+// to false for what shouls have been
+const bool NEW_CONSOLE = true; 
+
 const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
@@ -416,7 +420,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     if (argc != 1)
     {
 		// command line mode
-        AttachToConsole(true);
+        AttachToConsole(NEW_CONSOLE);
 
         if (strcmp(argv[1], "es") == 0) { action = "sound"; }
         else if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
