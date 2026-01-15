@@ -156,9 +156,9 @@ string arg_string(char* arg)
 * Creates new output console
 *  or attaches to parent console
 */
-static void AttachToConsole(BOOLEAN OutInNewConsole)
+static void AttachToConsole(BOOLEAN newconsole)
 {
-	if (OutInNewConsole) AllocConsole(); // create new output console
+	if (newconsole) AllocConsole(); // create new output console
 	else AttachConsole(ATTACH_PARENT_PROCESS); // attach to parent console
 
     FILE* fp = nullptr;
