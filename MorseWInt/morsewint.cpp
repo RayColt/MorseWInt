@@ -161,7 +161,7 @@ string arg_string(char* arg)
 static void AttachToConsole(BOOLEAN newconsole)
 {
 	if (newconsole) AllocConsole(); // create new output console
-	else AttachConsole(ATTACH_PARENT_PROCESS); // attach to parent console
+	else AttachConsole(ATTACH_PARENT_PROCESS); // attach to parent console - buggy
 
     FILE* fp = nullptr;
     freopen_s(&fp, "CONOUT$", "w", stdout);
