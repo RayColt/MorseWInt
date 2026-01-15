@@ -156,13 +156,13 @@ static void CreateMorseControls(HWND hWnd)
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	
     // create labels
-    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT:", 
+    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE / TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
 
     // create labels
     HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, 425, 25, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, 425, 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 	 
     HWND hWavLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
@@ -239,7 +239,7 @@ static void CreateMorseControls(HWND hWnd)
         PROGRESS_CLASSW,
         NULL,
         WS_CHILD | WS_VISIBLE,
-        270, 20, 144, 15,
+        270, 15, 144, 18,
         hWnd,
         (HMENU)2001,
         g_hInst,
@@ -344,7 +344,7 @@ static int ShowMorseApp(HWND &hwnd)
         L"MorseWInt 007",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        700, 500,
+        700, 460,
         nullptr, nullptr, hInst, nullptr
     );
 
