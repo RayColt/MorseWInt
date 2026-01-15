@@ -155,6 +155,8 @@ string arg_string(char* arg)
 /**
 * Creates new output console
 *  or attaches to parent console
+* 
+* @param newconsole
 */
 static void AttachToConsole(BOOLEAN newconsole)
 {
