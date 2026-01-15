@@ -415,7 +415,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     double sps = 44100;
     if (argc != 1)
     {
-        // console stuff
+		// command line mode
         AttachToConsole(true);
 
         if (strcmp(argv[1], "es") == 0) { action = "sound"; }
@@ -499,6 +499,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }
     else
     {
+		// GUI mode
         ShowMorseApp();
     }
 
