@@ -334,25 +334,59 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
             else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b7 = true; }
 
+            wstring in = GetTextFromEditField(hEdit);
+            string tmp;
+            wstring out;
 
             if (id == CID_ENCODE && code == BN_CLICKED)
             {
-               wstring in = GetTextFromEditField(hEdit);
-               string tmp;
-               wstring out;
+
                if (b1)
                {
                    tmp = m.morse_encode(WStringToString(in));
-				   out = StringToWString(tmp);
-				   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                   out = StringToWString(tmp);
                }
-
-                return 0;
+               else if (b2)
+               {
+                   tmp = m.morse_binary(WStringToString(in));
+                   out = StringToWString(tmp);
+               }
+               else if (b3)
+               {
+                   tmp = m.bin_morse_hexdecimal(WStringToString(in), 0);
+                   out = StringToWString(tmp);
+               }
+               else if (b4)
+               {
+                   tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
+                   out = StringToWString(tmp);
+               }
+               SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+               return 0;
             }
             else if (id == CID_DECODE && code == BN_CLICKED)
             {
-                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"hello");
-                //DestroyWindow(hWnd);
+                //SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"hello");
+                if (b1)
+                {
+                    tmp = m.morse_decode(WStringToString(in));
+                    out = StringToWString(tmp);
+                }
+                else if (b2)
+                {
+                    tmp = m.morse_decode(WStringToString(in));
+                    out = StringToWString(tmp);
+                }
+                else if (b3)
+                {
+                    tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
+                    out = StringToWString(tmp);
+                }
+                else if (b4)
+                {
+                    tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
+                    out = StringToWString(tmp);
+                }
                 return 0;
             }
             break;
