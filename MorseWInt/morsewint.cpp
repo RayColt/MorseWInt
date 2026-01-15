@@ -21,9 +21,8 @@
 
 using namespace std;
 
-
-static HINSTANCE g_hInst = NULL;
-Morse m;
+static HINSTANCE g_hInst = NULL; // global instance handle
+Morse m; // global morse settings
 
 // set to true to open new output console window - less buggy
 // to false for what should have been
