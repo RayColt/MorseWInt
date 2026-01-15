@@ -12,12 +12,9 @@
 #include "morse.h"
 #include "help.h"
 #include "morsewav.h"
-
+// GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
-
-#include <shellapi.h>
-#pragma comment(lib, "Shell32.lib")
 
 using namespace std;
 
