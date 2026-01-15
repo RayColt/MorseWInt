@@ -18,6 +18,7 @@
 
 using namespace std;
 
+HWND g_hWnd = NULL; // global window handle
 static HINSTANCE g_hInst = NULL; // global instance handle
 Morse m; // global morse settings
 string action = ""; // global action setting
@@ -135,25 +136,37 @@ static void AttachToConsole(BOOLEAN newconsole)
 
 // ---------------- MorseWInt GUI ----------------
 
-enum {
-	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109 };
+enum 
+{
+	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, 
+    CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109 
+};
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
 {
+    WNDCLASSEX wc;
+    wc.hbrBackground = CreateSolidBrush(RGB(255, 0, 0));
 	// radiobutton x position
     int radiobuttonX = 425;
-	
+    int radiobuttonY = 45;
+
     // create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	
     // create labels
     HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
+
+    // create labels
+    HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, 425, 25, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
 	 
-    HWND hwAVLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 190, 120, 18,
+    HWND hWavLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 200, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 	
     // create edit box
@@ -171,59 +184,62 @@ static void CreateMorseControls(HWND hWnd)
         NULL
     );
 
+    // create wav output edit box
+    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, 
+        radiobuttonX, 220, 200, 120, 
+        hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
+
 	// create radio buttons
-    CreateWindowExW(
-        0, L"BUTTON", L"Morse",
+    HWND hMorse = CreateWindowExW(
+        WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 40, 165, 20,
+        radiobuttonX, radiobuttonY, 165, 20,
         hWnd, (HMENU)CID_MORSE, g_hInst, NULL
     );
 
-    CreateWindowExW(
-        0, L"BUTTON", L"BinMorse",
+    HWND hBinMorse = CreateWindowExW(
+        WS_EX_TRANSPARENT, L"BUTTON", L"BinMorse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 65, 165, 20,
+        radiobuttonX, radiobuttonY + 25, 165, 20,
         hWnd, (HMENU)CID_BIN, g_hInst, NULL
     );
 
-    CreateWindowExW(
+    HWND hHexMorse = CreateWindowExW(
         0, L"BUTTON", L"HexMorse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 90, 165, 20,
+        radiobuttonX, radiobuttonY + 50, 165, 20,
         hWnd, (HMENU)CID_HEX, g_hInst, NULL
     );
 
-    CreateWindowExW(
+    HWND hHexBinMorse = CreateWindowExW(
         0, L"BUTTON", L"HexBinMorse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 115, 165, 20,
+        radiobuttonX, radiobuttonY + 75, 165, 20,
         hWnd, (HMENU)CID_HEXBIN, g_hInst, NULL
     );
 
-    CreateWindowExW(
+    HWND hMorseToWavS = CreateWindowExW(
         0, L"BUTTON", L"Morse to Wav(s)",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 140, 165, 20,
+        radiobuttonX, radiobuttonY + 100, 165, 20,
         hWnd, (HMENU)CID_M2WS, g_hInst, NULL
     );
 
-    CreateWindowExW(
+    HWND hMorseToWavM = CreateWindowExW(
         0, L"BUTTON", L"Morse to Wav(m)",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, 165, 165, 20,
+        radiobuttonX, radiobuttonY + 125, 165, 20,
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
-	// create wav output edit box
-    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
-	
     // create progress bar
     HWND hProg = CreateWindowExW(
         0,
         PROGRESS_CLASSW,
         NULL,
         WS_CHILD | WS_VISIBLE,
-        radiobuttonX, 400, 240, 20,
+        270, 15, 144, 20,
         hWnd,
         (HMENU)2001,
         g_hInst,
@@ -239,15 +255,28 @@ static void CreateMorseControls(HWND hWnd)
     //SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
 
 	// create buttons
-    HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
-    HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
+    HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
+    HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
 
 	// set fonts
-    SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+	// labels
+    SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+	SendMessageW(hModesLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hWavLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    // edit box
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
+    // buttons
+    SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+	// radio buttons
+    SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+	SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hHexMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
+	
 }
 
 // Morse window proc handles control actions and closes window
@@ -275,6 +304,19 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             }
             break;
         }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(g_hWnd, &ps);
+
+            // Fill background with custom color
+            HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
+            FillRect(hdc, &ps.rcPaint, bg);
+            DeleteObject(bg);
+
+            EndPaint(g_hWnd, &ps);
+            return 0;
+        }
         case WM_DESTROY:
         {
             PostQuitMessage(0);
@@ -286,7 +328,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         return 0;
 }
 
-static int ShowMorseApp()
+static int ShowMorseApp(HWND &hwnd)
 {
     HINSTANCE hInst = GetModuleHandle(nullptr);
 
@@ -297,7 +339,7 @@ static int ShowMorseApp()
 
     RegisterClass(&wc);
 
-    HWND hwnd = CreateWindow(
+    hwnd = CreateWindow(
         wc.lpszClassName,
         L"MorseWInt 007",
         WS_OVERLAPPEDWINDOW,
@@ -388,8 +430,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 		// command line mode
         AttachToConsole(NEW_CONSOLE);
 		// determine action
-        if (strcmp(argv[1], "es") == 0) { action = "sound"; }
-        else if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
+        if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
         else if (strcmp(argv[1], "e") == 0) { action = "encode"; }
         else if (strcmp(argv[1], "d") == 0) { action = "decode"; }
@@ -447,22 +488,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             {
                 MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1);
             }
-            else
-            {
-                int size = (int)morse.size();               
-				cout << "wave: " << sps << " Hz (-sps:" << sps << ")\n";
-				cout << "tone: " << m.frequency_in_hertz << " Hz (-tone:" << m.frequency_in_hertz << ")\n";
-				cout << "code: " << (m.words_per_minute / 1.2) << " Hz (-wpm:" << m.words_per_minute << ")\n";
-                cout << "to be able to change sound settings, choose sound to wav file, see -h\n";
-                for (size_t i = 0; i < size; ++i)
-                {
-                    char c = morse.at(i);
-                    string s(1, c);
-                    if (s == ".") Beep((DWORD)m.frequency_in_hertz, (DWORD)(1 * m.duration_milliseconds(m.words_per_minute)));
-                    if (s == "-") Beep((DWORD)m.frequency_in_hertz, (DWORD)(3 * m.duration_milliseconds(m.words_per_minute)));
-                    if (s == " ") Beep(0, (DWORD)(3.5 * m.duration_milliseconds(m.words_per_minute)));
-                }
-            }
         }
        //cout << "Press [Enter] key to close program . . .\n";
        int c = getchar();
@@ -471,7 +496,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     else
     {
 		// GUI mode
-        ShowMorseApp();
+        ShowMorseApp(g_hWnd);
     }
 
     // when done, free all allocated buffers and arrays

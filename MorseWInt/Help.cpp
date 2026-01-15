@@ -39,12 +39,12 @@ string Help::GetHelpTxt()
 	str += "AUDIO OUTPUT:\n";
 	str += "ew               Morse to WAV(Stereo)   Creates WAV file\n";
 	str += "ewm              Morse to WAV(Mono)     Creates WAV file\n";
-	str += "es               Morse to Windows Beep  No SPS required\n";
 	str += "\n";
 	str += "EXAMPLES:\n";
 	str += ".\\morse.exe d \"... ---  ...  ---\"\n";
 	str += "(Double quotes preserve double spaces used for word breaks)\n";
 	str += "\nPlace morse.exe in system32 and you can type:\n";
+	str += ".\\morse ew -wpm:33 -hz:880 -sps:48000 sos sos\n";
 	str += ".\\morse ewm -wpm:50 -hz:880 -sps:11025 paris paris paris\n";
 	str += "\n";
 	str += "SOUND SETTINGS:\n";
