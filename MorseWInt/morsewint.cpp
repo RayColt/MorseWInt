@@ -303,10 +303,11 @@ string WStringToString(const wstring& wstr)
 }
 wstring GetTextFromEditField(HWND hWnd)
 {
-    int length = GetWindowTextLengthW(hWavOut);
-    wstring text(length + 1, L'\0');
-    GetWindowTextW(hWnd, &text[0], length + 1);
-    return text;
+    int len = (int)SendMessageW(hEdit, WM_GETTEXTLENGTH, 0, 0);
+    std::wstring buf(len + 1, L'\0');
+    SendMessageW(hEdit, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
+    buf.resize(wcslen(buf.c_str()));
+    return buf;
 }
 
 // Morse window proc handles control actions and closes window
