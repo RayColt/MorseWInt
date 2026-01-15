@@ -465,6 +465,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (action == "sound" || action == "wav" || action == "wav_mono")
         {
             string morse = m.morse_encode(arg_in);
+            cout << arg_in << "\n";
             cout << morse << "\n";
             MakeMorseSafe(m);
 
