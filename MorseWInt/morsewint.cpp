@@ -349,8 +349,6 @@ static int ShowMorseApp()
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
-
-	
     // store instance handle in global variable
 	g_hInst = hInstance;
 	
