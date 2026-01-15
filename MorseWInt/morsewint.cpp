@@ -154,14 +154,14 @@ string arg_string(char* arg)
 
 /**
 * Creates new output console
-*  or attaches to parent console
+*  or attaches to parent console - buggy
 * 
 * @param newconsole
 */
 static void AttachToConsole(BOOLEAN newconsole)
 {
-	if (newconsole) AllocConsole(); // create new output console
-	else AttachConsole(ATTACH_PARENT_PROCESS); // attach to parent console - buggy
+	if (newconsole) AllocConsole();
+	else AttachConsole(ATTACH_PARENT_PROCESS);
 
     FILE* fp = nullptr;
     freopen_s(&fp, "CONOUT$", "w", stdout);
