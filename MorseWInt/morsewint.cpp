@@ -152,26 +152,18 @@ string arg_string(char* arg)
     return str;
 }
 
-// Utilities
-void AttachToConsole()
+/**
+* Attach to console
+*/
+static void AttachToConsole(BOOLEAN OutInNewConsole)
 {
-    if (AttachConsole(ATTACH_PARENT_PROCESS))
-    {
-        FILE* fp = nullptr;
+    if (OutInNewConsole) AllocConsole();
+    else AttachConsole(ATTACH_PARENT_PROCESS);
 
-        freopen_s(&fp, "CONOUT$", "w", stdout);
-        freopen_s(&fp, "CONOUT$", "w", stderr);
-        freopen_s(&fp, "CONIN$", "r", stdin);
-    }
-}
-
-static void SafeCloseHandle(HANDLE& h) 
-{
-    if (h) 
-    { 
-        CloseHandle(h);
-        h = NULL; 
-    }
+    FILE* fp = nullptr;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    freopen_s(&fp, "CONIN$", "r", stdin);
 }
 
 // ---------------- MorseWInt GUI ----------------
@@ -352,33 +344,20 @@ static int ShowMorseApp()
     return 0;
 }
 
-static void PrintWavInfo(string path , double Sps, double Tone, int Wpm, double WaveSize, long PcmCount)
-{
-    double Eps = Wpm / 1.2;
-	cout << "wave: " << Sps << " Hz (-sps:" << Sps << ")\n";
-	cout << "tone: " << Tone << " Hz (-tone:" << Tone << ")\n";
-	cout << "code: " << Eps << " Hz (-wpm:" << Wpm << ")\n";
-
-	cout << PcmCount << " PCM samples";
-	cout << " (" << (double)PcmCount / Sps << " s @ " << Sps / 1e3 << " kHz)";
-	cout << " written to " << path << " (" << WaveSize / 1024.0 << " kB)\n";
-}
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
+
+	
+    // store instance handle in global variable
 	g_hInst = hInstance;
-	// initialize progress bar
+	
+    // initialize progress bar
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
     InitCommonControlsEx(&icc);
-    AttachToConsole();
-    //AttachConsole(ATTACH_PARENT_PROCESS);
-
+	
+    // get command line arguments as wide strings
     int argc = 0;
     LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    if (!wargv) 
-    {
-        ShowMorseApp();
-    }
 
     // Choose code page: CP_UTF8 for UTF-8, or CP_ACP for ANSI
     const UINT CODE_PAGE = CP_UTF8;
@@ -435,6 +414,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     double sps = 44100;
     if (argc != 1)
     {
+        // console stuff
+        AttachToConsole(true);
+
         if (strcmp(argv[1], "es") == 0) { action = "sound"; }
         else if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
@@ -488,24 +470,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             if (action == "wav")
             {
                 MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2);
-                //PrintWavInfo(mw.GetSavePath(), sps, m.frequency_in_hertz, m.words_per_minute, mw.GetWaveSize(), mw.GetPcmCount());
-			//TODO: this part back MorseWav class
-
-                    double Eps = m.words_per_minute / 1.2;
-                    cout << "wave: " << sps << " Hz (-sps:" << sps << ")\n";
-                    cout << "tone: " << m.frequency_in_hertz << " Hz (-tone:" << m.frequency_in_hertz << ")\n";
-                    cout << "code: " << Eps << " Hz (-wpm:" << m.words_per_minute << ")\n";
-
-                    cout << mw.GetPcmCount() << " PCM samples";
-                    cout << " (" << (mw.GetPcmCount() / sps) << " s @ " << sps / 1e3 << " kHz)";
-                    cout << " written to " << mw.GetFullPath() << " (" << mw.GetWaveSize() / 1024.0 << " kB)\n";
-                   
-
             }
             else if (action == "wav_mono")
             {
                 MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1);
-                PrintWavInfo(mw.GetFullPath(), sps, m.frequency_in_hertz, m.words_per_minute, mw.GetWaveSize(), mw.GetPcmCount());
             }
             else
             {
@@ -524,9 +492,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-       cout << "Press 3X Enter key to close program . . .\n";
+       cout << "Press [Enter] key to close program . . .\n";
        int c = getchar();
-      // system("cls");
        return 0;
     }
     else

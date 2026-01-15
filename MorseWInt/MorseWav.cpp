@@ -25,6 +25,10 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     //printf("tone: %9.3lf Hz (-tone:%lg)\n", Tone, Tone);
     //printf("code: %9.3lf Hz (-wpm:%lg)\n", Eps, Wpm);
 
+	cout << "wave: " << Sps << " Hz (-sps:" << Sps << ")\n";
+	cout << "tone: " << Tone << " Hz (-tone:" << Tone << ")\n";
+	cout << "code: " << Eps << " Hz (-wpm:" << Wpm << ")\n";
+
     FullPath  = MorseWav::GetFullPath();
     MorseWav::MorseTones(MorseCode);
     MorseWav::WriteWav(pcm);
@@ -33,13 +37,17 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     //printf(" (%.1lf s @ %.1lf kHz)", (double)PcmCount / Sps, Sps / 1e3);
     //printf(" written to %s (%.1f kB)\n", fp.c_str(), WaveSize / 1024.0);
 
+	cout << PcmCount << " PCM samples";
+	cout << " (" << ((double)PcmCount / Sps) << " s @ " << (Sps / 1e3) << " kHz)";
+	cout << " written to\n " << FullPath << " (" << (WaveSize / 1024.0) << " kB)\n";
+
     if (1)
     {
         /* IF SHELLAPI DOES NOT WORK, USE SYSTEM COMMAND
 		 * BUT THIS OPENS A NEW CONSOLE WINDOW WHICH IS ANNOYING
-        string str = Path;
+        string str = FullPath;
         str += " /play /close ";
-        str += Path;
+        str += FullPath;
         const char* c = str.c_str();
         printf("** %s\n", c);
         system(c);*/
@@ -47,6 +55,9 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     }
 }
 
+/**
+* Get full save path
+*/
 string MorseWav::GetFullPath()
 {
     string filename = "morse_";
@@ -56,14 +67,7 @@ string MorseWav::GetFullPath()
     string fullpath = SaveDir + filename;
 	return fullpath;
 }
-long MorseWav::GetPcmCount()
-{
-    return PcmCount;
-}
-long MorseWav::GetWaveSize()
-{
-    return WaveSize;
-}
+
 /**
 * Get binary morse code (dit/dah) for a given character.
 * Generate one quantum of silence or tone in PCM/WAV array.
@@ -180,22 +184,23 @@ void MorseWav::WriteWav(const std::vector<int16_t> &pcmdata)
     wave_size = sizeof wave;
     data_size = (PcmCount * wave.wBitsPerSample * wave.nChannels) / 8;
     riff_size = fmt_size + wave_size + data_size; // 36 + data_size
-	WaveSize = riff_size + 8;
+	WaveSize = riff_size + 8; // 44 + dataSize
+
 
     // Try to create the directory
     if (_mkdir(SaveDir.c_str()) == 0)
     {
-        //cerr << "Directory created successfully.\n";
+        cerr << "Directory created successfully.\n";
     }
     else
     {
         if (errno == EEXIST)
         {
-            //cerr << "Directory already exists.\n";
+            cerr << "Directory already exists.\n";
         }
         else
         {
-            //cerr << "Error creating directory\n";
+            cerr << "Error creating directory\n";
             exit(1);
         }
     }
@@ -203,7 +208,7 @@ void MorseWav::WriteWav(const std::vector<int16_t> &pcmdata)
     ofstream out(FullPath, std::ios::binary);
     if (!out.is_open())
     {
-        //cerr << "Failed to open file: " << SaveDir + filename << '\n';
+        cerr << "Failed to open file: " << FullPath << '\n';
         // optionally inspect errno: std::perror("open");
         exit(1);
     }

@@ -47,14 +47,12 @@ public:
 	MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus);
 	~MorseWav() = default;
 
+private:
 	/**
-	* Get save path
+	* Get full save path
 	*/
 	std::string GetFullPath();
-	long GetPcmCount();
-	long GetWaveSize();
 
-private:
 	/**
 	* Write wav file
 	*
