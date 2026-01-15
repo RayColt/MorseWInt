@@ -39,12 +39,13 @@ private:
 	double Amplitude = 0.8;    // 80% of max volume (0.0 to 1.0)
 	long WaveSize;             // size of the wave file in bytes
 	long PcmCount;             // number of PCM samples
+	bool show;				   // to open media player after creation
 
 public:
 	/**
 	* Constructor / Destructor
 	*/
-	MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus);
+	MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show);
 	~MorseWav() = default;
 
 private:

@@ -18,15 +18,17 @@
 
 using namespace std;
 
+// config options
+const bool NEW_CONSOLE = true; // to false for what should have been
+const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with visible media player or not
+
+// global variables
 HWND g_hWnd = NULL; // global window handle
 static HINSTANCE g_hInst = NULL; // global instance handle
 Morse m; // global morse settings
 string action = ""; // global action setting
 
-// set to true to open new output console window - less buggy
-// to false for what should have been
-const bool NEW_CONSOLE = true; 
-
+// input limits
 const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
@@ -139,14 +141,15 @@ static void AttachToConsole(BOOLEAN newconsole)
 enum 
 {
 	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, 
-    CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109 
+	CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109, CID_HELP = 110
 };
+
+HWND hEdit = NULL;
+HWND hWavOut = NULL;
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
 {
-    WNDCLASSEX wc;
-    wc.hbrBackground = CreateSolidBrush(RGB(255, 0, 0));
 	// radiobutton x position
     int radiobuttonX = 425;
     int radiobuttonY = 45;
@@ -170,7 +173,7 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, NULL, g_hInst, NULL);
 	
     // create edit box
-    HWND hEdit = CreateWindowExW(
+    hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
         L"EDIT",
         NULL,
@@ -185,7 +188,7 @@ static void CreateMorseControls(HWND hWnd)
     );
 
     // create wav output edit box
-    HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
+    hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, 
         radiobuttonX, 220, 200, 120, 
         hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
@@ -193,7 +196,7 @@ static void CreateMorseControls(HWND hWnd)
 	// create radio buttons
     HWND hMorse = CreateWindowExW(
         WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
         radiobuttonX, radiobuttonY, 165, 20,
         hWnd, (HMENU)CID_MORSE, g_hInst, NULL
     );
@@ -233,6 +236,9 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
+	// set default radio button selection
+	SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
+
     // create progress bar
     HWND hProg = CreateWindowExW(
         0,
@@ -257,6 +263,7 @@ static void CreateMorseControls(HWND hWnd)
 	// create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
+    HWND hHelpButton = CreateWindowExW(0, L"BUTTON", L"HELP", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 620, 20, 40, 20, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
 
 	// set fonts
 	// labels
@@ -269,6 +276,7 @@ static void CreateMorseControls(HWND hWnd)
     // buttons
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
 	// radio buttons
     SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
 	SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
@@ -291,15 +299,36 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
         case WM_COMMAND:
         {
+            bool b1, b2, b3, b4, b5, b6, b7;
+            if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
+            else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
+            else if(IsDlgButtonChecked(hWnd, CID_HEX) == BST_CHECKED) { b3 = true; }
+            else if(IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
+            else if(IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
+            else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
+            else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b7 = true; }
+
             int id = LOWORD(wParam);
-            if (id == CID_ENCODE)
+            int code = HIWORD(wParam);
+            if (id == CID_ENCODE && code == BN_CLICKED)
+            {
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"Hello, Morse World!");
+
+                return 0;
+            }
+            else if (id == CID_DECODE && code == BN_CLICKED)
             {
                 DestroyWindow(hWnd);
                 return 0;
             }
-            else if (id == CID_DECODE)
+            else if (id == CID_HELP && code == BN_CLICKED)
             {
-                DestroyWindow(hWnd);
+                std::string s = Help::GetHelpTxt();
+                int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
+                std::wstring w(n, L'\0');
+                MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
+                if (!w.empty() && w.back() == L'\0') w.pop_back();
+                SetWindowTextW(hEdit, w.c_str());
                 return 0;
             }
             break;
@@ -363,7 +392,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // store instance handle in global variable
 	g_hInst = hInstance;
-	
+
+	CheckRadioButton(g_hWnd, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
+
     // initialize progress bar
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
     InitCommonControlsEx(&icc);
@@ -482,11 +513,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             if (action == "wav")
             {
-                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2);
+                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
             }
             else if (action == "wav_mono")
             {
-                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1);
+                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
             }
         }
        //cout << "Press [Enter] key to close program . . .\n";

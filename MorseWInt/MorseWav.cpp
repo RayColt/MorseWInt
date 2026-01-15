@@ -7,12 +7,13 @@ using namespace std;
 /**
 * Constructor
 */
-MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus) :
+MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show) :
     MorseCode(morsecode),
     NumChannels(modus),
     Wpm(wpm),
     Tone(tone),
     Sps(samples_per_second),
+	show(true),
     PcmCount(0),
 	WaveSize(0),
 	FullPath("")
@@ -51,7 +52,7 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
         const char* c = str.c_str();
         printf("** %s\n", c);
         system(c);*/
-        ShellExecuteA(NULL, "open", FullPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteA(NULL, "open", FullPath.c_str(), NULL, NULL, show);
     }
 }
 
