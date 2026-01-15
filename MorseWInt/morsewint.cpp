@@ -171,6 +171,10 @@ static void CreateMorseControls(HWND hWnd)
     HWND hWavLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 200, 120, 18,
         hWnd, NULL, g_hInst, NULL);
+
+	HWND hHelpLabel = CreateWindowExW(0, L"STATIC", L"command line help or usage:\r\nmorse.exe -h or -help", 
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 365, 250, 40,
+		hWnd, (HMENU)CID_HELP, g_hInst, NULL);
 	
     // create edit box
     hEdit = CreateWindowExW(
@@ -263,20 +267,19 @@ static void CreateMorseControls(HWND hWnd)
 	// create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
-    HWND hHelpButton = CreateWindowExW(0, L"BUTTON", L"HELP", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 620, 20, 40, 20, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
 
 	// set fonts
 	// labels
     SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
 	SendMessageW(hModesLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hWavLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     // edit box
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
     // buttons
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
 	// radio buttons
     SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
 	SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
@@ -285,6 +288,29 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
 	
+}
+
+// Convert string to wide string
+wstring StringToWString(const string& str)
+{
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
+    wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+string WStringToString(const wstring& wstr)
+{
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
+    string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+wstring GetTextFromEditField(HWND hWnd)
+{
+    int length = GetWindowTextLengthW(hWavOut);
+    wstring text(length + 1, L'\0');
+    GetWindowTextW(hWnd, &text[0], length + 1);
+    return text;
 }
 
 // Morse window proc handles control actions and closes window
@@ -299,7 +325,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
         case WM_COMMAND:
         {
-            bool b1, b2, b3, b4, b5, b6, b7;
+			bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
             if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_HEX) == BST_CHECKED) { b3 = true; }
@@ -312,23 +338,22 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             int code = HIWORD(wParam);
             if (id == CID_ENCODE && code == BN_CLICKED)
             {
-                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"Hello, Morse World!");
+               
+               wstring in = GetTextFromEditField(hEdit);
+               string tmp;
+               wstring out;
+               if (b1)
+               {
+                   tmp = m.morse_encode(WStringToString(in));
+				   out = StringToWString(tmp);
+				   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+               }
 
                 return 0;
             }
             else if (id == CID_DECODE && code == BN_CLICKED)
             {
                 DestroyWindow(hWnd);
-                return 0;
-            }
-            else if (id == CID_HELP && code == BN_CLICKED)
-            {
-                std::string s = Help::GetHelpTxt();
-                int n = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, nullptr, 0);
-                std::wstring w(n, L'\0');
-                MultiByteToWideChar(CP_UTF8, 0, s.c_str(), -1, &w[0], n);
-                if (!w.empty() && w.back() == L'\0') w.pop_back();
-                SetWindowTextW(hEdit, w.c_str());
                 return 0;
             }
             break;
