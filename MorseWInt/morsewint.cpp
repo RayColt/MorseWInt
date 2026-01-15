@@ -20,6 +20,7 @@ using namespace std;
 
 static HINSTANCE g_hInst = NULL; // global instance handle
 Morse m; // global morse settings
+string action = ""; // global action setting
 
 // set to true to open new output console window - less buggy
 // to false for what should have been
@@ -28,15 +29,6 @@ const bool NEW_CONSOLE = true;
 const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
-
-/**
-* Set action from menu
-*/
-string action = "";
-void SetAction(string a)
-{
-    action = a;
-}
 
 /**
 * Create Safe morse settings
@@ -52,7 +44,7 @@ static void MakeMorseSafe(Morse& morse)
 }
 
 /**
-* Reaf cmd line user arguments
+* Read cmd line user arguments
 *
 * @param argc
 * @param argv[]
@@ -61,10 +53,12 @@ static void MakeMorseSafe(Morse& morse)
 int get_options(int argc, char* argv[])
 {
     int args = 0;
-    bool ok = false;
+    bool ok = true;
+    // check for valid mode
     if (strncmp(argv[1], "e", 1) == 0 || strncmp(argv[1], "b", 1) == 0 || strncmp(argv[1], "d", 1) == 0 ||
         strncmp(argv[1], "he", 2) == 0 || strncmp(argv[1], "hd", 2) == 0 || strncmp(argv[1], "hb", 2) == 0 ||
-        strncmp(argv[1], "hbd", 3) == 0)
+        strncmp(argv[1], "hbd", 3) == 0 || strncmp(argv[1], "ew", 2) == 0 || strncmp(argv[1], "ewm", 3) == 0 ||
+        strncmp(argv[1], "es", 2) == 0)
     {
         ok = true;
     }
@@ -73,7 +67,7 @@ int get_options(int argc, char* argv[])
         cout << Help::GetHelpTxt();
         ok = true;
     }
-    else if (ok)
+	else if (ok) // read sound mode settings
     {
         while (argc > 1)
         {
@@ -394,7 +388,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     {
 		// command line mode
         AttachToConsole(NEW_CONSOLE);
-
+		// determine action
         if (strcmp(argv[1], "es") == 0) { action = "sound"; }
         else if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
@@ -456,11 +450,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             }
             else
             {
-                int size = (int)morse.size();
-                printf("wave: %9.3lf Hz (-sps:%lg)\n", sps, sps);
-                printf("tone: %9.3lf Hz (-tone:%lg)\n", m.frequency_in_hertz, m.frequency_in_hertz);
-                printf("code: %9.3lf Hz (-wpm:%lg)\n", m.words_per_minute / 1.2, m.words_per_minute);
-                cout << "to be able to change sound settings, choose sound to wav file\n";
+                int size = (int)morse.size();               
+				cout << "wave: " << sps << " Hz (-sps:" << sps << ")\n";
+				cout << "tone: " << m.frequency_in_hertz << " Hz (-tone:" << m.frequency_in_hertz << ")\n";
+				cout << "code: " << (m.words_per_minute / 1.2) << " Hz (-wpm:" << m.words_per_minute << ")\n";
+                cout << "to be able to change sound settings, choose sound to wav file, see -h\n";
                 for (size_t i = 0; i < size; ++i)
                 {
                     char c = morse.at(i);

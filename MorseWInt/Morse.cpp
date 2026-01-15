@@ -18,7 +18,7 @@ using namespace std;
 Morse::Morse()
 	: error_in("INPUT-ERROR"),
 	frequency_in_hertz(880.0),
-	words_per_minute(32.0),
+	words_per_minute(33.0),
 	samples_per_second(44100.0)
 {
 	fill_morse_maps();
