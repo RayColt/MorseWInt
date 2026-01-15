@@ -54,35 +54,6 @@ static void MakeMorseSafe(Morse& morse)
     if (morse.words_per_minute > 50.0) morse.words_per_minute = 50.0;
 }
 
-// Convert LPWSTR array to vector<string> (UTF-8)
-static vector<string> ConvertLPWSTRArrayToUtf8(int argc, LPWSTR* szArglist)
-{
-    std::vector<std::string> utf8_args;
-    utf8_args.reserve(argc);
-
-    for (int i = 0; i < argc; ++i)
-    {
-        LPWSTR w = szArglist[i];
-        if (!w) { utf8_args.emplace_back(); continue; }
-
-        // Get required buffer size (including null)
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, w, -1, nullptr, 0, nullptr, nullptr);
-
-        if (size_needed <= 0)
-        {
-            // fallback to empty string on error
-            utf8_args.emplace_back();
-            continue;
-        }
-
-        string s;
-        s.resize(size_needed - 1); // exclude terminating null in std::string
-        WideCharToMultiByte(CP_UTF8, 0, w, -1, s.data(), size_needed, nullptr, nullptr);
-        utf8_args.push_back(std::move(s));
-    }
-    return utf8_args;
-}
-
 /**
 * Reaf cmd line user arguments
 *
