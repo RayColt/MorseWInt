@@ -180,16 +180,12 @@ static void CreateMorseControls(HWND hWnd)
     hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
         L"EDIT",
-        NULL,
+        L"",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP |
-        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN |
-        WS_VSCROLL,
+        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
         15, 40, 400, 300,
-        hWnd,
-        (HMENU)CID_EDIT,
-        g_hInst,
-        NULL
-    );
+        hWnd, (HMENU)(INT_PTR)CID_EDIT, g_hInst, NULL);
+
 
     // create wav output edit box
     hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
@@ -325,6 +321,10 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
         case WM_COMMAND:
         {
+            int id = LOWORD(wParam);
+            int code = HIWORD(wParam);
+            HWND hCtrl = (HWND)lParam;
+
 			bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
             if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
@@ -334,11 +334,9 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
             else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b7 = true; }
 
-            int id = LOWORD(wParam);
-            int code = HIWORD(wParam);
+
             if (id == CID_ENCODE && code == BN_CLICKED)
             {
-               
                wstring in = GetTextFromEditField(hEdit);
                string tmp;
                wstring out;
@@ -353,7 +351,8 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             }
             else if (id == CID_DECODE && code == BN_CLICKED)
             {
-                DestroyWindow(hWnd);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"hello");
+                //DestroyWindow(hWnd);
                 return 0;
             }
             break;
@@ -546,13 +545,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             }
         }
        //cout << "Press [Enter] key to close program . . .\n";
-       int c = getchar();
+      // int c = getchar();
        return 0;
     }
     else
     {
 		// GUI mode
         ShowMorseApp(g_hWnd);
+        SetFocus(hEdit);
     }
 
     // when done, free all allocated buffers and arrays

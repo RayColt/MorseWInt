@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="MorseWInt.ico" />
+    <Image Include="app.ico" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="help.h" />

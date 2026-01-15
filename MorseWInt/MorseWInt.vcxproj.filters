@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="MorseWInt.ico">
+    <Image Include="app.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
