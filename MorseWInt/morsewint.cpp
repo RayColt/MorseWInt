@@ -151,18 +151,22 @@ enum {
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
 {
+	// radiobutton x position
     int radiobuttonX = 425;
-
+	
+    // create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-
+	
+    // create labels
     HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE or TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 10, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
-    
+	 
     HWND hwAVLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 190, 120, 18,
         hWnd, NULL, g_hInst, NULL);
-
+	
+    // create edit box
     HWND hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
         L"EDIT",
@@ -176,7 +180,8 @@ static void CreateMorseControls(HWND hWnd)
         g_hInst,
         NULL
     );
-    
+
+	// create radio buttons
     CreateWindowExW(
         0, L"BUTTON", L"Morse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
@@ -219,7 +224,10 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
+	// create wav output edit box
     HWND hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, radiobuttonX, 215, 165, 100, hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
+	
+    // create progress bar
     HWND hProg = CreateWindowExW(
         0,
         PROGRESS_CLASSW,
@@ -231,6 +239,8 @@ static void CreateMorseControls(HWND hWnd)
         g_hInst,
         NULL
     );
+
+	// Initialize progress bar
     SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
 	SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
@@ -238,13 +248,12 @@ static void CreateMorseControls(HWND hWnd)
     //SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
    // SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
 
-
+	// create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"Encode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 100, 400, 80, 24, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"Decode", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 200, 400, 80, 24, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
 
+	// set fonts
     SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-   
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFont, TRUE);
