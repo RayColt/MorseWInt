@@ -356,11 +356,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
     InitCommonControlsEx(&icc);
 	
-    // get command line arguments as wide strings
+    // Process command line arguments
     int argc = 0;
     LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
-    // Choose code page: CP_UTF8 for UTF-8, or CP_ACP for ANSI
+    // choose code page: CP_UTF8 for UTF-8, or CP_ACP for ANSI
     const UINT CODE_PAGE = CP_UTF8;
 
     // allocate array of char* (will own pointers to each C string)
