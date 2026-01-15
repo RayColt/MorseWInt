@@ -239,7 +239,7 @@ static void CreateMorseControls(HWND hWnd)
         PROGRESS_CLASSW,
         NULL,
         WS_CHILD | WS_VISIBLE,
-        270, 15, 144, 20,
+        270, 20, 144, 15,
         hWnd,
         (HMENU)2001,
         g_hInst,
