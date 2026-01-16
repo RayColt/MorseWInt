@@ -7,6 +7,7 @@
 * @version 007
 */
 #include <windows.h>
+#include "resource.h"
 #include <random>
 #include <string>
 #include "morse.h"
@@ -455,17 +456,20 @@ static int ShowMorseApp(HWND &hwnd)
     wc.lpfnWndProc = MorseWIntWndProc;
     wc.hInstance = g_hInst;
     wc.lpszClassName = L"MorseWIntWindowClass";
-
+    //wc.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE((LPWSTR)IDI_ICON1));
+    //wc.hIcon = ::LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
     RegisterClass(&wc);
 
     hwnd = CreateWindow(
         wc.lpszClassName,
-        L"MorseWInt 007",
+        L"MORSEWINT 01111 010101 11111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         700, 460,
         nullptr, nullptr, g_hInst, nullptr
     );
+    //HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
+    //SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
 
     ShowWindow(hwnd, SW_SHOW);
 
