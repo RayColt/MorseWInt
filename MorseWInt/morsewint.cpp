@@ -650,8 +650,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     {
 		// GUI mode
         ShowMorseApp(g_hWnd);
-        int i = 0;
-       // SetFocus(hEdit);
     }
 
     // when done, free all allocated buffers and arrays
