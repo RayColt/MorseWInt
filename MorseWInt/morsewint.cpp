@@ -285,7 +285,6 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
-	
 }
 
 // String Functions
@@ -483,6 +482,7 @@ static int ShowMorseApp(HWND &hwnd)
     wc.lpszClassName = L"MorseWIntWindowClass"; // TODO: add icon
     //wc.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE((LPWSTR)IDI_ICON1)); 
     //wc.hIcon = ::LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
+    wc.hIcon = (HICON)LoadImage(NULL, L"app.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
     RegisterClass(&wc);
 
     hwnd = CreateWindow(
