@@ -177,7 +177,7 @@ static void CreateMorseControls(HWND hWnd)
 	HWND hHelpLabel = CreateWindowExW(0, L"STATIC", L"command line help or usage:\r\nmorse.exe -h or -help", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 365, 250, 40,
 		hWnd, (HMENU)CID_HELP, g_hInst, NULL);
-	
+	// TODO: add input edits tone, sps, wpm 
     // create edit box
     hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
@@ -379,7 +379,6 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    out = StringToWString(tmp);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
-               // TODO: add output wav creations output edit 
                else if (b5)
                {
                    tmp = m.morse_encode(WStringToString(in));
