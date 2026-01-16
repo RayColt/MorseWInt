@@ -367,46 +367,59 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                // TODO: add output wav creations output edit 
-               else if (b5) // TODO: debug output wav creations edit 
+               else if (b5)
                {
                    tmp = m.morse_encode(WStringToString(in));
+                   out = StringToWString(tmp);
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                else if (b6)
                {
                    tmp = m.morse_encode(WStringToString(in));
+                   out = StringToWString(tmp);
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                }
                return 0;
             }
             else if (id == CID_DECODE && code == BN_CLICKED)
             {
-                //SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)L"hello");
                 if (b1)
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str()); // TODO: debug output decodes
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str()); // TODO: debug output decodes
                 }
                 else if (b2)
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                 }
                 else if (b3)
                 {
                     tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                 }
                 else if (b4)
                 {
                     tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)tmp.c_str());
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                }
+                if (b5)
+                {
+                    tmp = m.morse_decode(WStringToString(in));
+                    out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                }
+                if (b6)
+                {
+                    tmp = m.morse_decode(WStringToString(in));
+                    out = StringToWString(tmp);
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                 }
                 return 0;
             }
