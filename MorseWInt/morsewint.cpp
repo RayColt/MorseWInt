@@ -4,7 +4,7 @@
 * International Morse Code Encoder/Decoder/Wav creator with GUI and Command Line Interface in One!
 * 
 * @author RAY COLT
-* @version 007
+* @version 01111 010101 11111
 */
 #include <windows.h>
 #include "resource.h"
