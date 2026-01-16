@@ -392,7 +392,6 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    wout += L"code: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(m.words_per_minute), 3)) + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / m.samples_per_second), 2)) + L" s\r\n";
-                   
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                }
                else if (b6)
@@ -401,6 +400,13 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    out = StringToWString(tmp);
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                   wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
+                   wout += L"wave: " + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L")\r\n";
+                   wout += L"tone: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L")\r\n";
+                   wout += L"code: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(m.words_per_minute), 3)) + L")\r\n";
+                   wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / m.samples_per_second), 2)) + L" s\r\n";
+                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                }
                return 0;
             }
