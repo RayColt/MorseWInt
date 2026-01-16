@@ -157,6 +157,7 @@ static void CreateMorseControls(HWND hWnd)
 
     // create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    HFONT hFontMorse = CreateFontW(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	
     // create labels
@@ -190,8 +191,8 @@ static void CreateMorseControls(HWND hWnd)
 
     // create wav output edit box
     hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
-        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE, 
-        radiobuttonX, 220, 200, 120, 
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
+        radiobuttonX, 220, 240, 120, 
         hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
 
 	// create radio buttons
@@ -272,7 +273,7 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hWavLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     // edit box
-    SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
     // buttons
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
@@ -287,7 +288,7 @@ static void CreateMorseControls(HWND hWnd)
 	
 }
 
-// Convert string to wide string
+// String Functions
 wstring StringToWString(const string& str)
 {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
@@ -295,6 +296,7 @@ wstring StringToWString(const string& str)
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstrTo[0], size_needed);
     return wstrTo;
 }
+
 string WStringToString(const wstring& wstr)
 {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
@@ -302,6 +304,7 @@ string WStringToString(const wstring& wstr)
     WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
     return strTo;
 }
+
 wstring GetTextFromEditField(HWND hWnd)
 {
     int len = (int)SendMessageW(hEdit, WM_GETTEXTLENGTH, 0, 0);
@@ -309,6 +312,15 @@ wstring GetTextFromEditField(HWND hWnd)
     SendMessageW(hEdit, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
     buf.resize(wcslen(buf.c_str()));
     return buf;
+}
+
+string trimDecimals(const std::string& s, int decimals)
+{
+    int pos = s.find('.');
+    if (pos == std::string::npos) return s;
+    int end = pos + 1 + decimals;
+    if (end >= s.size()) return s;
+    return s.substr(0, end);
 }
 
 // Morse window proc handles control actions and closes window
@@ -374,6 +386,14 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    out = StringToWString(tmp);
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                   wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
+                   wout += L"wave: " + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L")\r\n";
+                   wout += L"tone: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L")\r\n";
+                   wout += L"code: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(m.words_per_minute), 3)) + L")\r\n";
+                   wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / m.samples_per_second), 2)) + L" s\r\n";
+                   
+                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                }
                else if (b6)
                {
@@ -390,7 +410,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                 {
                     tmp = m.morse_decode(WStringToString(in));
                     out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str()); // TODO: debug output decodes
+                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                 }
                 else if (b2)
                 {
@@ -455,8 +475,8 @@ static int ShowMorseApp(HWND &hwnd)
     WNDCLASS wc = {};
     wc.lpfnWndProc = MorseWIntWndProc;
     wc.hInstance = g_hInst;
-    wc.lpszClassName = L"MorseWIntWindowClass";
-    //wc.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE((LPWSTR)IDI_ICON1));
+    wc.lpszClassName = L"MorseWIntWindowClass"; // TODO: add icon
+    //wc.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE((LPWSTR)IDI_ICON1)); 
     //wc.hIcon = ::LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
     RegisterClass(&wc);
 
@@ -481,7 +501,10 @@ static int ShowMorseApp(HWND &hwnd)
     }
     return 0;
 }
+void setWavOut(Morse morse)
+{
 
+}
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // store instance handle in global variable
