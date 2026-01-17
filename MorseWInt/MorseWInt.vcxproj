@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="help.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="morse.h" />
     <ClInclude Include="morsewav.h" />
     <ClInclude Include="resource.h" />
@@ -34,7 +35,7 @@
     <ClCompile Include="Help.cpp" />
     <ClCompile Include="Morse.cpp" />
     <ClCompile Include="MorseWav.cpp" />
-    <ClCompile Include="morsewint.cpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

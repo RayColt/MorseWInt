@@ -6,18 +6,7 @@
 * @author RAY COLT
 * @version 01111 010101 11111
 */
-#include <windows.h>
-#include "resource.h"
-#include <random>
-#include <string>
-#include "morse.h"
-#include "help.h"
-#include "morsewav.h"
-// GUI includes
-#include <commctrl.h>
-#pragma comment(lib, "comctl32.lib")
-
-using namespace std;
+#include "main.h"
 
 // config options
 const bool NEW_CONSOLE = true; // to false for what should have been
@@ -148,9 +137,9 @@ enum
 
 HWND hEdit = NULL;
 HWND hWavOut = NULL;
-HWND hToneOut = NULL;
-HWND hWpmOut = NULL;
-HWND hSpsOut = NULL;
+HWND hTone = NULL;
+HWND hWpm = NULL;
+HWND hSps = NULL;
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
@@ -218,19 +207,19 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
 
     // create Tone edit box
-    hToneOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+    hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_TONE, g_hInst, NULL);
 
     // create Wpm edit box
-    hWpmOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+    hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 70, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_WPM, g_hInst, NULL);
 
     // create Sps edit box
-    hSpsOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+    hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 140, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_SPS, g_hInst, NULL);
@@ -330,6 +319,13 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+    wstring wt = StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3));
+    wstring ww = StringToWString(trimDecimals(to_string(m.words_per_minute), 3));
+    wstring ws = StringToWString(trimDecimals(to_string(m.samples_per_second), 3));
+    SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)wt.c_str());
+    SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)ww.c_str());
+    SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
 }
 
 // String Functions
@@ -367,6 +363,14 @@ string trimDecimals(const std::string& s, int decimals)
     return s.substr(0, end);
 }
 
+double wstring_to_double(const std::wstring& s) 
+{
+    // std::stod accepts std::wstring directly
+    // throws std::invalid_argument or std::out_of_range on error
+    return std::stod(s);
+}
+
+
 // Morse window proc handles control actions and closes window
 LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -393,12 +397,14 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 
             wstring in = GetTextFromEditField(hEdit);
+            wstring tonein = GetTextFromEditField(hTone);
+            wstring wpmin = GetTextFromEditField(hWpm);
+            wstring spsin = GetTextFromEditField(hSps);
             string tmp;
             wstring out;
 
             if (id == CID_ENCODE && code == BN_CLICKED)
             {
-
                if (b1)
                {
                    tmp = m.morse_encode(WStringToString(in));
@@ -427,6 +433,12 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
+
+                   // TODO: connect WAV INPUTS and try catch
+                  // double tone = wstring_to_double(tonein); // stod throws std::invalid_argument or std::out_of_range on error
+                 //  int wpm = wstring_to_double(wpmin);
+                  // double sps = wstring_to_double(spsin);
+
                    MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
