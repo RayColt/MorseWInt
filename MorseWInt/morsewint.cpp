@@ -164,15 +164,16 @@ static void CreateMorseControls(HWND hWnd)
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     HFONT hFontMorse = CreateFontW(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-	
-    // create labels
+	HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    
+     // create labels
     HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE / TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
 
     // create labels
     HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY-20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY - 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWavInLabel = CreateWindowExW(0, L"STATIC", L"WAV INPUT:",
@@ -180,25 +181,25 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, NULL, g_hInst, NULL);
     
     HWND hToneLabel = CreateWindowExW(0, L"STATIC", L"Tone:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY+20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWpmLabel = CreateWindowExW(0, L"STATIC", L"Wpm:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX+75, wavinY+20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 70, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hSpsLabel = CreateWindowExW(0, L"STATIC", L"Sps:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX+150, wavinY+20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 140, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWavOutLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 255, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
-//	HWND hHelpLabel = CreateWindowExW(0, L"STATIC", L"command line help or usage:\r\nmorse.exe -h or -help", 
-//        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 365, 250, 40,
-//		hWnd, (HMENU)CID_HELP, g_hInst, NULL);
-	// TODO: add input edits tone, sps, wpm 
+	HWND hHelpLabel = CreateWindowExW(0, L"STATIC", L"Command line Help or Usage: morse.exe -h or -help", 
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 400, 450, 12,
+ 	    hWnd, (HMENU)CID_HELP, g_hInst, NULL);
+
     // create edit box
     hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
@@ -219,19 +220,19 @@ static void CreateMorseControls(HWND hWnd)
     // create Tone edit box
     hToneOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX, wavinY+40, 65, 18,
+        radiobuttonX, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_TONE, g_hInst, NULL);
 
     // create Wpm edit box
     hWpmOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX+70, wavinY+40, 65, 18,
+        radiobuttonX + 70, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_WPM, g_hInst, NULL);
 
     // create Sps edit box
     hSpsOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX+140, wavinY+40, 65, 18,
+        radiobuttonX + 140, wavinY + 40, 65, 18,
         hWnd, (HMENU)CID_SPS, g_hInst, NULL);
 
 	// create radio buttons
@@ -314,8 +315,8 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hToneLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hWpmLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontSmallBold, TRUE);
 
-    //SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     // edit box
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
