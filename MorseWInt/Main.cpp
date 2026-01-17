@@ -544,7 +544,7 @@ static int ShowMorseApp(HWND &hwnd)
 
     hwnd = CreateWindow(
         wc.lpszClassName,
-        L"MORSEWINT 01111 010101 11111",
+        L"MorseWInt 01111 010101 11111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         700, 460,
