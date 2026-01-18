@@ -23,18 +23,12 @@ const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 
-/**
-* Create Safe morse settings
-*/
-static void MakeMorseSafe(Morse& morse)
-{
-    if (morse.samples_per_second < 8000.0) morse.samples_per_second = 8000.0;
-    if (morse.samples_per_second > 48000) morse.samples_per_second = 48000.0;
-    if (morse.frequency_in_hertz < 20.0) morse.frequency_in_hertz = 20.0;
-    if (morse.frequency_in_hertz > 8000.0) morse.frequency_in_hertz = 8000.0;
-    if (morse.words_per_minute < 0.0) morse.words_per_minute = 0.0;
-    if (morse.words_per_minute > 50.0) morse.words_per_minute = 50.0;
-}
+// default morse settings
+const string error_in = "INPUT-ERROR";
+double frequency_in_hertz = 880.0;
+double words_per_minute = 33.0;
+double samples_per_second = 44100.0;
+
 
 /**
 * Read cmd line user arguments
@@ -65,15 +59,15 @@ int get_options(int argc, char* argv[])
         {
             if (strncmp(argv[2], "-hz:", 4) == 0)
             {
-                m.frequency_in_hertz = atof(&argv[2][4]);
+                frequency_in_hertz = atof(&argv[2][4]);
             }
             else if (strncmp(argv[2], "-wpm:", 5) == 0)
             {
-                m.words_per_minute = atof(&argv[2][5]);
+                words_per_minute = atof(&argv[2][5]);
             }
             else if (strncmp(argv[2], "-sps:", 5) == 0)
             {
-                m.samples_per_second = atof(&argv[2][5]);
+                samples_per_second = atof(&argv[2][5]);
             }
             else
             {
@@ -320,9 +314,9 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
 
-    wstring wt = StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3));
-    wstring ww = StringToWString(trimDecimals(to_string(m.words_per_minute), 3));
-    wstring ws = StringToWString(trimDecimals(to_string(m.samples_per_second), 3));
+    wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
+    wstring ww = StringToWString(trimDecimals(to_string(words_per_minute), 3));
+    wstring ws = StringToWString(trimDecimals(to_string(samples_per_second), 3));
     SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)wt.c_str());
     SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)ww.c_str());
     SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
@@ -438,29 +432,30 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                   // double tone = wstring_to_double(tonein); // stod throws std::invalid_argument or std::out_of_range on error
                  //  int wpm = wstring_to_double(wpmin);
                   // double sps = wstring_to_double(spsin);
-
-                   MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+                 
+                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
-                   wout += L"wave: " + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L")\r\n";
-                   wout += L"tone: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L")\r\n";
-                   wout += L"code: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(m.words_per_minute), 3)) + L")\r\n";
+                   wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
+                   wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";
+                   wout += L"code: " + StringToWString(trimDecimals(to_string(frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(words_per_minute), 3)) + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / m.samples_per_second), 2)) + L" s\r\n";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                }
                else if (b6)
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
-                   MorseWav mw = MorseWav(tmp.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
+                   
+                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
-                   wout += L"wave: " + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(m.samples_per_second), 3)) + L")\r\n";
-                   wout += L"tone: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(m.frequency_in_hertz), 3)) + L")\r\n";
-                   wout += L"code: " + StringToWString(trimDecimals(to_string(m.frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(m.words_per_minute), 3)) + L")\r\n";
+                   wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
+                   wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";
+                   wout += L"code: " + StringToWString(trimDecimals(to_string(frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(words_per_minute), 3)) + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / m.samples_per_second), 2)) + L" s\r\n";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                }
                return 0;
@@ -688,15 +683,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             string morse = m.morse_encode(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
-            MakeMorseSafe(m);
 
             if (action == "wav")
             {
-                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
             }
             else if (action == "wav_mono")
             {
-                MorseWav mw = MorseWav(morse.c_str(), m.frequency_in_hertz, m.words_per_minute, m.samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
+                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
             }
         }
        //cout << "Press [Enter] key to close program . . .\n";

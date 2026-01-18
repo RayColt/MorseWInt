@@ -52,7 +52,15 @@ public:
 	* Get full save path
 	*/
 	std::string GetFullPath();
+
+	/**
+	* Get GetWaveSize
+	*/
 	long GetWaveSize();
+
+	/**
+	* Get GetPcmCount
+	*/
 	long GetPcmCount();
 
 private:

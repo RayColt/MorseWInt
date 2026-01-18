@@ -19,13 +19,6 @@
 class Morse
 {
 public:
-	const std::string error_in;
-	double frequency_in_hertz;
-	double words_per_minute;
-	//double max_frequency_in_hertz;
-	//double min_frequency_in_hertz;
-	double samples_per_second;
-
 	Morse();
 	std::multimap <std::string, std::string> morse_map;
 	std::multimap <std::string, std::string> morse_map_reversed;

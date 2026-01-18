@@ -17,7 +17,6 @@
 
 using namespace std;
 
-static void MakeMorseSafe(Morse& morse);
 int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
 

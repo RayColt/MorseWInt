@@ -16,10 +16,6 @@ using namespace std;
 * Constructor
 */
 Morse::Morse()
-	: error_in("INPUT-ERROR"),
-	frequency_in_hertz(880.0),
-	words_per_minute(33.0),
-	samples_per_second(44100.0)
 {
 	fill_morse_maps();
 }
@@ -198,7 +194,7 @@ string Morse::morse_decode(string str)
 	}
 	else
 	{
-		return error_in;
+		return "INPUT-ERROR";
 	}
 }
 
@@ -254,7 +250,7 @@ string Morse::hexdecimal_bin_txt(string str, int modus)
 	}
 	else
 	{
-		return error_in;
+		return "INPUT-ERROR";
 	}
 }
 
