@@ -429,6 +429,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    out = StringToWString(tmp);
 
                    // TODO: connect WAV INPUTS and try catch
+				   // TODO: pcm count *2 if stereo also seconds
                   // double tone = wstring_to_double(tonein); // stod throws std::invalid_argument or std::out_of_range on error
                  //  int wpm = wstring_to_double(wpmin);
                   // double sps = wstring_to_double(spsin);
