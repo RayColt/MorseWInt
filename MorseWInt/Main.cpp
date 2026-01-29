@@ -563,7 +563,7 @@ static int ShowMorseApp(HWND &hwnd)
     WNDCLASS wc = {};
     wc.lpfnWndProc = MorseWIntWndProc;
     wc.hInstance = g_hInst;
-    wc.lpszClassName = L"MorseWIntWindowClass"; // TODO: add icon
+    wc.lpszClassName = L"MorseWIntWindowClass"; // TODO: add icon - path inside exe?
     //wc.hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE((LPWSTR)IDI_ICON1)); 
     //wc.hIcon = ::LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
     wc.hIcon = (HICON)LoadImage(NULL, L"app.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
