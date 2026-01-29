@@ -11,6 +11,13 @@
 #include "morse.h"
 #include "help.h"
 #include "morsewav.h"
+#include <windows.h>
+#include <vector>
+#include <thread>
+#include <atomic>
+#include <cmath>
+#include <cstdint>
+
 // GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")

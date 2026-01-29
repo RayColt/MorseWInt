@@ -26,9 +26,8 @@ const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 // default morse settings
 const string error_in = "INPUT-ERROR";
 double frequency_in_hertz = 880.0;
-double words_per_minute = 33.0;
-double samples_per_second = 44100.0;
-
+int words_per_minute = 33;
+int samples_per_second = 44100;
 
 /**
 * Read cmd line user arguments
@@ -145,7 +144,7 @@ static void CreateMorseControls(HWND hWnd)
 
     // create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-    HFONT hFontMorse = CreateFontW(18, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    HFONT hFontMorse = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     
@@ -315,8 +314,8 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
-    wstring ww = StringToWString(trimDecimals(to_string(words_per_minute), 3));
-    wstring ws = StringToWString(trimDecimals(to_string(samples_per_second), 3));
+    wstring ww = StringToWString(to_string(words_per_minute));
+    wstring ws = StringToWString(to_string(samples_per_second));
     SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)wt.c_str());
     SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)ww.c_str());
     SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
@@ -391,7 +390,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 
             wstring in = GetTextFromEditField(hEdit);
-            wstring tonein = GetTextFromEditField(hTone);
+			wstring tonein = GetTextFromEditField(hTone); // TODO: add tone, wpm and sps
             wstring wpmin = GetTextFromEditField(hWpm);
             wstring spsin = GetTextFromEditField(hSps);
             string tmp;
@@ -436,13 +435,18 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                  
                    MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+				   Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
                    wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
                    wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";
                    wout += L"code: " + StringToWString(trimDecimals(to_string(frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(words_per_minute), 3)) + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
+                   wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
+                   
+                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)).c_str());
+                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)StringToWString(to_string(words_per_minute)).c_str());
+                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)StringToWString(to_string(samples_per_second)).c_str());
                }
                else if (b6)
                {
@@ -451,6 +455,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    
                    MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                   Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
                    wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
                    wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";

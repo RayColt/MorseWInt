@@ -25,6 +25,7 @@ Morse::Morse()
 */
 multimap <string, string> morse_map;
 multimap <string, string> morse_map_reversed;
+
 void Morse::fill_morse_maps()
 {
 	morse_map.insert(pair <string, string>(" ", ""));        // SPACE (0b1)
