@@ -594,10 +594,7 @@ static int ShowMorseApp(HWND &hwnd)
     }
     return 0;
 }
-void setWavOut(Morse morse)
-{
 
-}
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // store instance handle in global variable
