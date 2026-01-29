@@ -197,25 +197,25 @@ static void CreateMorseControls(HWND hWnd)
     hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
         radiobuttonX, 275, 240, 120,
-        hWnd, (HMENU)CID_WAVOUT, g_hInst, NULL);
+        hWnd, (HMENU)(INT_PTR)CID_WAVOUT, g_hInst, NULL);
 
     // create Tone edit box
     hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX, wavinY + 40, 65, 18,
-        hWnd, (HMENU)CID_TONE, g_hInst, NULL);
+        hWnd, (HMENU)(INT_PTR)CID_TONE, g_hInst, NULL);
 
     // create Wpm edit box
     hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 70, wavinY + 40, 65, 18,
-        hWnd, (HMENU)CID_WPM, g_hInst, NULL);
+        hWnd, (HMENU)(INT_PTR)CID_WPM, g_hInst, NULL);
 
     // create Sps edit box
     hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 140, wavinY + 40, 65, 18,
-        hWnd, (HMENU)CID_SPS, g_hInst, NULL);
+        hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
 
 	// create radio buttons
     HWND hMorse = CreateWindowExW(
@@ -444,9 +444,9 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                    
-                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)).c_str());
-                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)StringToWString(to_string(words_per_minute)).c_str());
-                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)StringToWString(to_string(samples_per_second)).c_str());
+                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)trimDecimals(WStringToString(tonein), 3).c_str());
+                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
+                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
                }
                else if (b6)
                {
