@@ -467,7 +467,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stoi(spsin)), 2)) + L" s\r\n";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
                   
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                    SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
@@ -487,7 +487,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stoi(spsin)), 2)) + L" s\r\n";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
 
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
                    SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
