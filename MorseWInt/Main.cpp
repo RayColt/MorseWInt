@@ -340,29 +340,55 @@ string WStringToString(const wstring& wstr)
 
 wstring GetTextFromEditField(HWND hWnd)
 {
-    int len = (int)SendMessageW(hEdit, WM_GETTEXTLENGTH, 0, 0);
-    std::wstring buf(len + 1, L'\0');
-    SendMessageW(hEdit, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
-    buf.resize(wcslen(buf.c_str()));
+    // Defensive: validate the handle
+    if (hWnd == NULL || !IsWindow(hWnd))
+    {
+        return std::wstring();
+    }
+
+    // Get the length (number of characters) in the control
+    int len = GetWindowTextLengthW(hWnd);
+    if (len <= 0)
+    {
+        // zero-length or error -> return empty string
+        return std::wstring();
+    }
+
+    // Allocate buffer including null terminator and fetch text
+    std::wstring buf(static_cast<size_t>(len) + 1, L'\0');
+    int copied = GetWindowTextW(hWnd, &buf[0], len + 1);
+    if (copied <= 0)
+    {
+        // failed to copy -> return empty string
+        return std::wstring();
+    }
+
+    buf.resize(static_cast<size_t>(copied));
     return buf;
 }
 
 string trimDecimals(const std::string& s, int decimals)
 {
-    int pos = s.find('.');
+    if (s.empty()) return s;
+
+    // Find decimal point
+    std::string::size_type pos = s.find('.');
     if (pos == std::string::npos) return s;
-    int end = pos + 1 + decimals;
-    if (end >= s.size()) return s;
+
+    // Normalize decimals: treat negative as 0
+    if (decimals < 0) decimals = 0;
+
+    // Number of fractional digits available after the dot
+    std::string::size_type available = s.size() - pos - 1;
+
+    // If requested decimals >= available, nothing to trim
+    if (static_cast<std::string::size_type>(decimals) >= available) return s;
+
+    // Safe to compute end index (count of characters to keep)
+    std::string::size_type end = pos + 1 + static_cast<std::string::size_type>(decimals);
+
     return s.substr(0, end);
 }
-
-double wstring_to_double(const std::wstring& s) 
-{
-    // std::stod accepts std::wstring directly
-    // throws std::invalid_argument or std::out_of_range on error
-    return std::stod(s);
-}
-
 
 // Morse window proc handles control actions and closes window
 LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -390,7 +416,7 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 
             wstring in = GetTextFromEditField(hEdit);
-			wstring tonein = GetTextFromEditField(hTone); // TODO: add tone, wpm and sps
+			wstring tonein = StringToWString(trimDecimals(WStringToString(GetTextFromEditField(hTone)), 3));
             wstring wpmin = GetTextFromEditField(hWpm);
             wstring spsin = GetTextFromEditField(hSps);
             string tmp;
@@ -437,14 +463,14 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 				   Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
-                   wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
-                   wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";
-                   wout += L"code: " + StringToWString(trimDecimals(to_string(frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(words_per_minute), 3)) + L")\r\n";
+                   wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
+                   wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
+                   wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stoi(spsin)), 2)) + L" s\r\n";
+                  
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
-                   
-                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)trimDecimals(WStringToString(tonein), 3).c_str());
+                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
                    SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
                    SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
                }
@@ -457,12 +483,16 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
-                   wout += L"wave: " + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L" Hz (-sps:" + StringToWString(trimDecimals(to_string(samples_per_second), 3)) + L")\r\n";
-                   wout += L"tone: " + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L" Hz (-tone:" + StringToWString(trimDecimals(to_string(frequency_in_hertz), 3)) + L")\r\n";
-                   wout += L"code: " + StringToWString(trimDecimals(to_string(frequency_in_hertz / 1.2), 3)) + L" Hz (-wpm:" + StringToWString(trimDecimals(to_string(words_per_minute), 3)) + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount())) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / samples_per_second), 2)) + L" s\r\n";
+                   wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
+                   wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
+                   wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
+                   wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
+                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stoi(spsin)), 2)) + L" s\r\n";
+
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
+                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
+                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
+                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
                }
                return 0;
             }
