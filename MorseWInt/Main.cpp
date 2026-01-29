@@ -22,6 +22,8 @@ string action = ""; // global action setting
 const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
+const int MONO = 1;
+const int STEREO = 2;
 
 // default morse settings
 const string error_in = "INPUT-ERROR";
@@ -452,21 +454,15 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
-
-                   // TODO: connect WAV INPUTS and try catch
-				   // TODO: pcm count *2 if stereo also seconds
-                  // double tone = wstring_to_double(tonein); // stod throws std::invalid_argument or std::out_of_range on error
-                 //  int wpm = wstring_to_double(wpmin);
-                  // double sps = wstring_to_double(spsin);
                  
-                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 				   Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
                    wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
                    wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
+                   wout += StringToWString(to_string(mw.GetPcmCount() * STEREO)) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
                   
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
@@ -479,14 +475,14 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
                    
-                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
                    wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
                    wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount() * 2)) + L" PCM samples in ";
+                   wout += StringToWString(to_string(mw.GetPcmCount() * MONO)) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
 
                    SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
