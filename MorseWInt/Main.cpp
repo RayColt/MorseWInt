@@ -20,7 +20,7 @@ string action = ""; // global action setting
 
 // input limits
 const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
-//const int MAX_MORSE_INPUT = 5000; // max chars for morse encoding/decoding
+const int MAX_MORSE_INPUT = 5000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 const int MONO = 1;
 const int STEREO = 2;
@@ -400,41 +400,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             CreateMorseControls(hWnd);
             return 0;
         }
-        case WM_NOTIFY:
-        {
-            LPNMHDR pnm = (LPNMHDR)lParam;
-            if (pnm->hwndFrom == hProg && pnm->code == NM_CUSTOMDRAW) 
-            {
-                LPNMCUSTOMDRAW pcd = (LPNMCUSTOMDRAW)pnm;
-                switch (pcd->dwDrawStage)
-                {
-                case CDDS_PREPAINT:
-                    return CDRF_NOTIFYPOSTPAINT;
-                case CDDS_POSTPAINT:
-                {
-                    HDC hdc = pcd->hdc;
-                    RECT rc;
-                    GetClientRect(hProg, &rc);
-
-                    int pos = (int)SendMessage(hProg, PBM_GETPOS, 0, 0);
-                    int min = (int)SendMessage(hProg, PBM_GETRANGE, TRUE, 0);
-                    int max = (int)SendMessage(hProg, PBM_GETRANGE, FALSE, 0);
-                    int pct = (max > min) ? (pos - min) * 100 / (max - min) : 0;
-
-                    std::wstring text = std::to_wstring(pct) + L"%";
-
-                    HFONT hOld = (HFONT)SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
-                    SetBkMode(hdc, TRANSPARENT);
-                    SetTextColor(hdc, RGB(0, 0, 0));
-                    DrawTextW(hdc, text.c_str(), -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-                    SelectObject(hdc, hOld);
-
-                    return CDRF_DODEFAULT;
-                }
-                }
-            }
-        }
-        break;
         case WM_COMMAND:
         {
             int id = LOWORD(wParam);
