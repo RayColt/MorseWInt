@@ -40,8 +40,8 @@ int samples_per_second = 44100;
 */
 static void MakeMorseSafe(double &tone, int &wpm, int &sps)
 {
-    if (samples_per_second < 8000.0) sps = 8000.0;
-    if (samples_per_second > 48000) sps = 48000.0;
+    if (sps < 8000.0) sps = 8000.0;
+    if (sps > 48000) sps = 48000.0;
     if (tone < 20.0) tone = 20.0;
     if (tone > 8000.0) tone = 8000.0;
     if (wpm < 0.0) wpm = 0.0;
