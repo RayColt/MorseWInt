@@ -7,17 +7,15 @@ using namespace std;
 /**
 * Constructor
 */
-MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show) :
-    MorseCode(morsecode),
-    NumChannels(modus),
-    Wpm(wpm),
-    Tone(tone),
-    Sps(samples_per_second),
-	show(true),
-    PcmCount(0),
-	WaveSize(0),
-	FullPath("")
+MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show)
 {
+    FullPath = MorseWav::GetFullPath();
+    MorseCode = morsecode;
+    NumChannels = modus;
+    Wpm = wpm;
+    Tone = tone;
+    Sps = samples_per_second;
+
     // Note 60 seconds = 1 minute and 50 elements = 1 morse word.
     Eps = Wpm / 1.2;    // elements per second (frequency of morse coding)
     Bit = 1.2 / Wpm;    // seconds per element (period of morse coding)
@@ -30,7 +28,6 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
 	cout << "tone: " << Tone << " Hz (-tone:" << Tone << ")\n";
 	cout << "code: " << Eps << " Hz (-wpm:" << Wpm << ")\n";
 
-    FullPath  = MorseWav::GetFullPath();
     MorseWav::MorseTones(MorseCode);
     MorseWav::WriteWav(pcm);
 
