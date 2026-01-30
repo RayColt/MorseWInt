@@ -19,8 +19,8 @@ Morse m; // global morse settings
 string action = ""; // global action setting
 
 // input limits
-const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
-const int MAX_MORSE_INPUT = 2000; // max chars for morse encoding/decoding
+const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
+//const int MAX_MORSE_INPUT = 5000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 const int MONO = 1;
 const int STEREO = 2;
@@ -130,11 +130,13 @@ enum
     CID_TONE = 111, CID_WPM = 112, CID_SPS = 113
 };
 
+// Global handles to child controls
 HWND hEdit = NULL;
 HWND hWavOut = NULL;
 HWND hTone = NULL;
 HWND hWpm = NULL;
 HWND hSps = NULL;
+HWND hProg = NULL;
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
@@ -144,18 +146,18 @@ static void CreateMorseControls(HWND hWnd)
     int radiobuttonY = 30;
     int wavinY = 185;
 
-    // create ms font
+    // Create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     HFONT hFontMorse = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     
-     // create labels
+     // Create labels
     HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE / TXT:", 
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
 
-    // create labels
+    // Create labels
     HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY - 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
@@ -184,7 +186,7 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 400, 450, 12,
  	    hWnd, (HMENU)CID_HELP, g_hInst, NULL);
 
-    // create edit box
+    // Create edit box
     hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
         L"EDIT",
@@ -195,31 +197,31 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)(INT_PTR)CID_EDIT, g_hInst, NULL);
 
 
-    // create wav output edit box
+    // Create wav output edit box
     hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
         radiobuttonX, 275, 240, 120,
         hWnd, (HMENU)(INT_PTR)CID_WAVOUT, g_hInst, NULL);
 
-    // create Tone edit box
+    // Create Tone edit box
     hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_TONE, g_hInst, NULL);
 
-    // create Wpm edit box
+    // Create Wpm edit box
     hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 70, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_WPM, g_hInst, NULL);
 
-    // create Sps edit box
+    // Create Sps edit box
     hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
         radiobuttonX + 140, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
 
-	// create radio buttons
+	// Create radio buttons
     HWND hMorse = CreateWindowExW(
         WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
         WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
@@ -266,32 +268,28 @@ static void CreateMorseControls(HWND hWnd)
 	SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
 
     // create progress bar
-    HWND hProg = CreateWindowExW(
+        hProg = CreateWindowExW(
         0,
         PROGRESS_CLASSW,
         NULL,
         WS_CHILD | WS_VISIBLE,
-        270, 15, 144, 18,
+        268, 15, 146, 18,
         hWnd,
         (HMENU)2001,
         g_hInst,
         NULL
     );
-    // TODO: add pprogress bar
+
 	// Initialize progress bar
     SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
-	SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
-	//SendMessageW(hProg, PBM_STEPIT, 0, 0); // increment position by step amount
-    //SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
-    //SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
+	SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
 
-	// create buttons
+	// Create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
 
-	// set fonts
-	// labels
+	// Set fonts
     SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
 	SendMessageW(hModesLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hWavOutLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
@@ -301,13 +299,15 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontSmallBold, TRUE);
 
-    // edit box
+    // Edit box
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
     SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
-    // buttons
+
+    // Buttons
     SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-	// radio buttons
+
+	// Radio buttons
     SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
 	SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hHexMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
@@ -323,7 +323,12 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
 }
 
-// String Functions
+/**
+* Convert string to wstring
+* 
+* @param str
+* @return wstring
+*/
 wstring StringToWString(const string& str)
 {
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
@@ -332,6 +337,12 @@ wstring StringToWString(const string& str)
     return wstrTo;
 }
 
+/**
+* Convert wstring to string
+* 
+* @param wstr
+* @return string
+*/
 string WStringToString(const wstring& wstr)
 {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
@@ -340,60 +351,47 @@ string WStringToString(const wstring& wstr)
     return strTo;
 }
 
+/**
+* Get text from edit field
+* 
+* @param hWnd   
+* @return wstring
+*/
 wstring GetTextFromEditField(HWND hWnd)
 {
-    // Defensive: validate the handle
-    if (hWnd == NULL || !IsWindow(hWnd))
-    {
-        return std::wstring();
-    }
-
-    // Get the length (number of characters) in the control
-    int len = GetWindowTextLengthW(hWnd);
-    if (len <= 0)
-    {
-        // zero-length or error -> return empty string
-        return std::wstring();
-    }
-
-    // Allocate buffer including null terminator and fetch text
-    std::wstring buf(static_cast<size_t>(len) + 1, L'\0');
-    int copied = GetWindowTextW(hWnd, &buf[0], len + 1);
-    if (copied <= 0)
-    {
-        // failed to copy -> return empty string
-        return std::wstring();
-    }
-
-    buf.resize(static_cast<size_t>(copied));
+    int len = (int)SendMessageW(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    wstring buf(len + 1, L'\0');
+    SendMessageW(hWnd, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
+    buf.resize(wcslen(buf.c_str()));
     return buf;
 }
 
-string trimDecimals(const std::string& s, int decimals)
-{
-    if (s.empty()) return s;
-
-    // Find decimal point
-    std::string::size_type pos = s.find('.');
-    if (pos == std::string::npos) return s;
-
-    // Normalize decimals: treat negative as 0
-    if (decimals < 0) decimals = 0;
-
-    // Number of fractional digits available after the dot
-    std::string::size_type available = s.size() - pos - 1;
-
-    // If requested decimals >= available, nothing to trim
-    if (static_cast<std::string::size_type>(decimals) >= available) return s;
-
-    // Safe to compute end index (count of characters to keep)
-    std::string::size_type end = pos + 1 + static_cast<std::string::size_type>(decimals);
-
-    return s.substr(0, end);
+/**
+* Trim decimals from string representation of float
+* 
+* @param s
+* @param decimals
+* @return string
+*/
+string trimDecimals(const string& s, int decimals) 
+{ 
+    int pos = s.find('.'); 
+    if (pos == string::npos) return s; 
+    int end = pos + 1 + decimals; 
+    if (end >= s.size()) return s; 
+    return s.substr(0, end); 
 }
 
-// Morse window proc handles control actions and closes window
-LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+/**
+* Window Procedure for MorseWInt
+*
+* @param hWnd
+* @param msg
+* @param wParam
+* @param lParam
+* @return LRESULT
+*/
+static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
@@ -402,12 +400,69 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             CreateMorseControls(hWnd);
             return 0;
         }
+        case WM_NOTIFY:
+        {
+            LPNMHDR pnm = (LPNMHDR)lParam;
+            if (pnm->hwndFrom == hProg && pnm->code == NM_CUSTOMDRAW) 
+            {
+                LPNMCUSTOMDRAW pcd = (LPNMCUSTOMDRAW)pnm;
+                switch (pcd->dwDrawStage)
+                {
+                case CDDS_PREPAINT:
+                    return CDRF_NOTIFYPOSTPAINT;
+                case CDDS_POSTPAINT:
+                {
+                    HDC hdc = pcd->hdc;
+                    RECT rc;
+                    GetClientRect(hProg, &rc);
+
+                    int pos = (int)SendMessage(hProg, PBM_GETPOS, 0, 0);
+                    int min = (int)SendMessage(hProg, PBM_GETRANGE, TRUE, 0);
+                    int max = (int)SendMessage(hProg, PBM_GETRANGE, FALSE, 0);
+                    int pct = (max > min) ? (pos - min) * 100 / (max - min) : 0;
+
+                    std::wstring text = std::to_wstring(pct) + L"%";
+
+                    HFONT hOld = (HFONT)SelectObject(hdc, GetStockObject(DEFAULT_GUI_FONT));
+                    SetBkMode(hdc, TRANSPARENT);
+                    SetTextColor(hdc, RGB(0, 0, 0));
+                    DrawTextW(hdc, text.c_str(), -1, &rc, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+                    SelectObject(hdc, hOld);
+
+                    return CDRF_DODEFAULT;
+                }
+                }
+            }
+        }
+        break;
         case WM_COMMAND:
         {
             int id = LOWORD(wParam);
             int code = HIWORD(wParam);
             HWND hCtrl = (HWND)lParam;
 
+            if (id == CID_EDIT && code == EN_CHANGE) 
+            {
+                int len = GetWindowTextLengthW(hEdit); // number of characters
+
+                if (len == 0)
+                {
+                    SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
+                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 255, 0)); // bar color
+				}
+				if (len > 0 && len < MAX_TXT_INPUT)
+                {
+                    int percent = (len * 100) / MAX_TXT_INPUT;
+                    if (percent > 100) percent = 100;
+                    if (percent >= 95)
+                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
+                    SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
+                }
+            //SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
+            //SendMessageW(hProg, PBM_STEPIT, 0, 0); // increment position by step amount
+            //SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
+            //SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
+            }
 			bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
             if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
@@ -415,7 +470,6 @@ LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
             else if(IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
-
 
             wstring in = GetTextFromEditField(hEdit);
 			wstring tonein = StringToWString(trimDecimals(WStringToString(GetTextFromEditField(hTone)), 3));
