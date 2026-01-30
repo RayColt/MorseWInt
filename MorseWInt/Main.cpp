@@ -483,7 +483,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
                  
-                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(tonein), stod(wpmin), stod(spsin), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 				   Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
@@ -503,7 +503,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
                    
-                   MorseWav mw = MorseWav(tmp.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(tonein), stod(wpmin), stod(spsin), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
