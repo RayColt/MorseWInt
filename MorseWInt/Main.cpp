@@ -456,7 +456,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             {
                if (b1)
                {
-                   tmp = m.morse_encode(WStringToString(in));
+                   tmp = m.morse_encode(WStringToString(in));// TODO: BUG
                    out = StringToWString(tmp);
                    
                }
