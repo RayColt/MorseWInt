@@ -285,7 +285,7 @@ static void CreateMorseControls(HWND hWnd)
     );
 
 	// Initialize progress bar
-    SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
+    SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0â€“100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
 	SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
 
