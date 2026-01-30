@@ -1,4 +1,0 @@
-root = true
-[*]
-end_of_line = lf        # or crlf
-charset = utf-8
