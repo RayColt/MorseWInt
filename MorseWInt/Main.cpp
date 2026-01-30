@@ -750,7 +750,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
             }
         }
-       //cout << "Press [Enter] key to close program . . .\n";
+        cout << "Press [Enter] key to close program . . .\n";
         int c = getchar();
        return 0;
     }

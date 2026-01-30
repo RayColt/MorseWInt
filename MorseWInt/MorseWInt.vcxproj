@@ -112,10 +112,8 @@
       </ManifestFile>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
-      <Message>
-      </Message>
+      <Command>copy /y "$(TargetPath)" "$(TargetDir)morse.exe</Command>
+      <Message>copies MorseWInt.exe into morse.exe</Message>
     </PostBuildEvent>
     <Manifest>
       <AdditionalManifestFiles>
