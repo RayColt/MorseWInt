@@ -14,7 +14,7 @@ using namespace std;
 *
 * @return string
 */
-string Help::GetHelpTxt() // TODO: tab str lines for better console view
+string Help::GetHelpTxt()
 {
 	string str = "";
 	str += " MORSE Encoder / Decoder Utility   Version 1.0\n";
