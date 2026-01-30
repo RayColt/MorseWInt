@@ -127,7 +127,7 @@ enum
 {
 	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, 
 	CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109, CID_HELP = 110,
-    CID_TONE = 111, CID_WPM = 112, CID_SPS = 113
+	CID_TONE = 111, CID_WPM = 112, CID_SPS = 113, CID_PROG = 114
 };
 
 // Global handles to child controls
@@ -137,6 +137,7 @@ HWND hTone = NULL;
 HWND hWpm = NULL;
 HWND hSps = NULL;
 HWND hProg = NULL;
+HWND hCountLabel = NULL;
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
@@ -157,7 +158,10 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
         hWnd, NULL, g_hInst, NULL);
 
-    // Create labels
+    hCountLabel = CreateWindowExW(0, L"STATIC", StringToWString(to_string(MAX_TXT_INPUT)).c_str(),
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX - 190, radiobuttonY - 10, 25, 18,
+        hWnd, NULL, g_hInst, NULL);
+
     HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY - 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
@@ -275,7 +279,7 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE,
         268, 15, 146, 18,
         hWnd,
-        (HMENU)2001,
+        (HMENU)CID_PROG,
         g_hInst,
         NULL
     );
@@ -298,6 +302,7 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hWpmLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontSmallBold, TRUE);
+	SendMessageW(hCountLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     // Edit box
     SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
@@ -315,6 +320,7 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
 
+	// set default morse settings in edit boxes
     wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
     wstring ww = StringToWString(to_string(words_per_minute));
     wstring ws = StringToWString(to_string(samples_per_second));
@@ -409,25 +415,28 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             if (id == CID_EDIT && code == EN_CHANGE) 
             {
                 int len = GetWindowTextLengthW(hEdit); // number of characters
-
+                int left = MAX_TXT_INPUT - len;
+                wstring out = StringToWString(to_string(left));
+                SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
                 if (len == 0)
                 {
                     SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
-                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 255, 0)); // bar color
+                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255)); // bar color
 				}
 				if (len > 0 && len < MAX_TXT_INPUT)
                 {
                     int percent = (len * 100) / MAX_TXT_INPUT;
                     if (percent > 100) percent = 100;
-                    if (percent >= 95)
-                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
                     SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
+                    if (percent < 90)
+						SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
+                    if (percent >= 95)
+                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
+                    if (percent >= 99)
+                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
                 }
-            //SendMessageW(hProg, PBM_SETPOS, 33, 0); // update position %
-            //SendMessageW(hProg, PBM_STEPIT, 0, 0); // increment position by step amount
-            //SendMessageW(hProg, PBM_SETBKCOLOR, 0, RGB(0, 0, 0));        // background
-            //SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 255, 255)); // bar color
             }
+
 			bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
             if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
@@ -449,7 +458,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                   
                }
                else if (b2)
                {
