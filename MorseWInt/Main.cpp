@@ -32,6 +32,23 @@ int words_per_minute = 33;
 int samples_per_second = 44100;
 
 /**
+* Make morse settings safe
+* 
+* @param tone
+* @param wpm
+* @param sps
+*/
+static void MakeMorseSafe(double &tone, int &wpm, int &sps)
+{
+    if (samples_per_second < 8000.0) sps = 8000.0;
+    if (samples_per_second > 48000) sps = 48000.0;
+    if (tone < 20.0) tone = 20.0;
+    if (tone > 8000.0) tone = 8000.0;
+    if (wpm < 0.0) wpm = 0.0;
+    if (wpm > 50.0) wpm = 50.0;
+}
+
+/**
 * Read cmd line user arguments
 *
 * @param argc
@@ -444,11 +461,18 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             else if(IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
             else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
-
+ 
+            
             wstring in = GetTextFromEditField(hEdit);
-			wstring tonein = StringToWString(trimDecimals(WStringToString(GetTextFromEditField(hTone)), 3));
-            wstring wpmin = GetTextFromEditField(hWpm);
-            wstring spsin = GetTextFromEditField(hSps);
+
+			int si = stoi(WStringToString(GetTextFromEditField(hSps))); // TODO check Stoi exceptions
+            double ti = stod(GetTextFromEditField(hTone));
+            int wi = stoi(GetTextFromEditField(hWpm));
+            MakeMorseSafe(ti, wi, si);
+            wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
+            wstring wpmin = StringToWString(to_string(wi));
+            wstring spsin = StringToWString(to_string(si));
+
             string tmp;
             wstring out;
 
@@ -741,6 +765,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             string morse = m.morse_encode(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
+			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second); // TODO: check
 
             if (action == "wav")
             {
