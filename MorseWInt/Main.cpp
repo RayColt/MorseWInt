@@ -416,7 +416,7 @@ string WStringToString(const wstring& wstr)
 /**
 * Get text from edit field
 * 
-* @param hWnd   
+* @param hWnd
 * @return wstring
 */
 wstring GetTextFromEditField(HWND hWnd)
@@ -444,7 +444,17 @@ string trimDecimals(const string& s, int decimals)
     return s.substr(0, end); 
 }
 
-// Subclass procedure for edit controls: handle Ctrl+A -> select all
+/**
+* Subclass procedure for edit controls: handle Ctrl+A -> select all
+* 
+* @param hwnd
+* @param uMsg
+* @param wParam
+* @param lParam
+* @param uIdSubclass
+* @param dwRefData
+* @return LRESULT
+*/
 static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
     UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
@@ -467,6 +477,7 @@ static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM
 * @param msg
 * @param wParam
 * @param lParam
+* 
 * @return LRESULT
 */
 static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
