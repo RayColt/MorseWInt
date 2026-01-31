@@ -122,6 +122,44 @@ string arg_string(char* arg)
 }
 
 /**
+* Parse int from edit field
+* 
+* @param hWnd
+* @param defaultVal
+* @return wstring
+*/
+static int ParseIntFromEdit(HWND hEdit, int defaultVal) 
+{
+    if (!hEdit) return defaultVal;
+    std::wstring w = GetTextFromEditField(hEdit);
+    if (w.empty()) return defaultVal;
+    wchar_t* end = nullptr;
+    errno = 0;
+    long val = wcstol(w.c_str(), &end, 10);
+    if (end == w.c_str() || errno == ERANGE) return defaultVal;
+    return static_cast<int>(val);
+}
+
+/**
+* Parse double from edit field
+*
+* @param hWnd
+* @param defaultVal
+* @return wstring
+*/
+static double ParseDoubleFromEdit(HWND hEdit, double defaultVal) 
+{
+    if (!hEdit) return defaultVal;
+    std::wstring w = GetTextFromEditField(hEdit);
+    if (w.empty()) return defaultVal;
+    wchar_t* end = nullptr;
+    errno = 0;
+    long val = wcstol(w.c_str(), &end, 10);
+    if (end == w.c_str() || errno == ERANGE) return defaultVal;
+    return static_cast<double>(val);
+}
+
+/**
 * Creates new output console
 *  or attaches to parent console - buggy
 * 
@@ -216,7 +254,8 @@ static void CreateMorseControls(HWND hWnd)
         ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
         15, 40, 400, 300,
         hWnd, (HMENU)(INT_PTR)CID_EDIT, g_hInst, NULL);
-
+    // subclass to handle Ctrl+A
+    SetWindowSubclass(hEdit, Edit_SelectAll_SubclassProc, 1, 0);
 
     // Create wav output edit box
     hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
@@ -405,6 +444,22 @@ string trimDecimals(const string& s, int decimals)
     return s.substr(0, end); 
 }
 
+// Subclass procedure for edit controls: handle Ctrl+A -> select all
+static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
+    UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    if (uMsg == WM_KEYDOWN)
+    {
+        // check Ctrl + A (handle both 'A' and 'a')
+        if ((wParam == 'A' || wParam == 'a') && (GetKeyState(VK_CONTROL) & 0x8000))
+        {
+            SendMessageW(hwnd, EM_SETSEL, 0, -1); // select all text
+            return 0; // consumed
+        }
+    }
+    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+}
+
 /**
 * Window Procedure for MorseWInt
 *
@@ -464,15 +519,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
  
             
             wstring in = GetTextFromEditField(hEdit);
-
-			int si = stoi(WStringToString(GetTextFromEditField(hSps))); // TODO check Stoi exceptions
-            double ti = stod(GetTextFromEditField(hTone));
-            int wi = stoi(GetTextFromEditField(hWpm));
-            MakeMorseSafe(ti, wi, si);
-            wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
-            wstring wpmin = StringToWString(to_string(wi));
-            wstring spsin = StringToWString(to_string(si));
-
             string tmp;
             wstring out;
 
@@ -506,8 +552,16 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
-                 
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(tonein), stod(wpmin), stod(spsin), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
+
+                   int si = ParseIntFromEdit(hSps, samples_per_second);
+                   double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
+                   int wi = ParseIntFromEdit(hWpm, words_per_minute);
+                   MakeMorseSafe(ti, wi, si);
+                   wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
+                   wstring wpmin = StringToWString(to_string(wi));
+                   wstring spsin = StringToWString(to_string(si));
+
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(trimDecimals(WStringToString(tonein), 3)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 				   Sleep(250); // wait for file to be written
 				   // TODO: place this in a function?
@@ -528,7 +582,15 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
                    
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(tonein), stod(wpmin), stod(spsin), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
+                   int si = ParseIntFromEdit(hSps, samples_per_second);
+                   double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
+                   int wi = ParseIntFromEdit(hWpm, words_per_minute);
+                   MakeMorseSafe(ti, wi, si);
+                   wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
+                   wstring wpmin = StringToWString(to_string(wi));
+                   wstring spsin = StringToWString(to_string(si));
+
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(trimDecimals(WStringToString(tonein), 3)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
