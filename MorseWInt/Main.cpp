@@ -838,15 +838,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             string morse = m.morse_encode(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
-			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second); // TODO: check
+			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
 
             if (action == "wav")
             {
-                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 2, OPEN_EXTERNAL_MEDIAPLAYER);
+                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
             }
             else if (action == "wav_mono")
             {
-                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, 1, OPEN_EXTERNAL_MEDIAPLAYER);
+                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER);
             }
         }
         cout << "Press [Enter] key to close program . . .\n";

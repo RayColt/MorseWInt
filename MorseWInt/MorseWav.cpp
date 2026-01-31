@@ -19,10 +19,6 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     // Note 60 seconds = 1 minute and 50 elements = 1 morse word.
     Eps = Wpm / 1.2;    // elements per second (frequency of morse coding)
     Bit = 1.2 / Wpm;    // seconds per element (period of morse coding)
-    
-    //printf("wave: %9.3lf Hz (-sps:%lg)\n", Sps, Sps);
-    //printf("tone: %9.3lf Hz (-tone:%lg)\n", Tone, Tone);
-    //printf("code: %9.3lf Hz (-wpm:%lg)\n", Eps, Wpm);
 
 	cout << "wave: " << Sps << " Hz (-sps:" << Sps << ")\n";
 	cout << "tone: " << Tone << " Hz (-tone:" << Tone << ")\n";
@@ -31,11 +27,8 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
     MorseWav::MorseTones(MorseCode);
     MorseWav::WriteWav(pcm);
 
-    //printf("%ld PCM samples", PcmCount);
-    //printf(" (%.1lf s @ %.1lf kHz)", (double)PcmCount / Sps, Sps / 1e3);
-    //printf(" written to %s (%.1f kB)\n", fp.c_str(), WaveSize / 1024.0);
-
-	cout << PcmCount << " PCM samples";
+	int mod = (NumChannels == 2) ? 2 : 1;
+	cout << PcmCount * mod << " PCM samples";
 	cout << " (" << ((double)PcmCount / Sps) << " s @ " << (Sps / 1e3) << " kHz)";
 	cout << " written to\n " << FullPath << " (" << (WaveSize / 1024.0) << " kB)\n";
 
