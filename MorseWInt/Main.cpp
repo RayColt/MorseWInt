@@ -9,7 +9,7 @@
 #include "main.h"
 
 // config options
-const bool NEW_CONSOLE = true; // to false for what should have been
+const bool NEW_CONSOLE = true; // to false for what should have been - IF USING CONSOLE MODUS
 const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with visible media player or not
 
 // global variables
@@ -572,7 +572,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    wstring wpmin = StringToWString(to_string(wi));
                    wstring spsin = StringToWString(to_string(si));
 
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(trimDecimals(WStringToString(tonein), 3)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(WStringToString(tonein)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 				   Sleep(250); // wait for file to be written
 				   // TODO: place this in a function?
@@ -601,7 +601,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    wstring wpmin = StringToWString(to_string(wi));
                    wstring spsin = StringToWString(to_string(si));
 
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(trimDecimals(WStringToString(tonein), 3)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
+                   MorseWav mw = MorseWav(tmp.c_str(), stod(WStringToString(tonein)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L"kB)\r\n\r\n";
