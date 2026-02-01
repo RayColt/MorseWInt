@@ -11,8 +11,6 @@
 #include <iterator>
 #include <vector>
 #include <regex>
-#include <exception>
-
 
 /**
 * C++ MorseWav.h file
