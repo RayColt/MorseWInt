@@ -580,7 +580,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
 				   // TODO: place this in a function?
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L" kB)\r\n\r\n";
                    wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
-                   wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
+                   wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount() * STEREO)) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
@@ -608,7 +608,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    Sleep(250); // wait for file to be written
                    wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L" kB)\r\n\r\n";
                    wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
-                   wout += L"tone: " + tonein + L" Hz (-tone:" + tonein + L")\r\n";
+                   wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
                    wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
                    wout += StringToWString(to_string(mw.GetPcmCount() * MONO)) + L" PCM samples in ";
                    wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
