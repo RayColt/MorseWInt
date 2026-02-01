@@ -262,6 +262,8 @@ static void CreateMorseControls(HWND hWnd)
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
         radiobuttonX, 275, 240, 120,
         hWnd, (HMENU)(INT_PTR)CID_WAVOUT, g_hInst, NULL);
+    // subclass to handle Ctrl+A
+    SetWindowSubclass(hWavOut, Edit_SelectAll_SubclassProc, 1, 0);
 
     // Create Tone edit box
     hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
