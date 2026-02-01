@@ -11,6 +11,7 @@
 #include <iterator>
 #include <vector>
 #include <regex>
+#include <exception>
 
 
 /**
