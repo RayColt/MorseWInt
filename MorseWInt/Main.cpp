@@ -19,7 +19,8 @@ Morse m; // global morse settings
 string action = ""; // global action setting
 
 // input limits
-const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
+// TODO: add multithreading on wav creation to prevent not responding below 1500 is saver
+const int MAX_TXT_INPUT = 1500; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 5000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 const int MONO = 1;
