@@ -291,11 +291,11 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWpmLabel = CreateWindowExW(0, L"STATIC", L"Wpm:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 70, wavinY + 20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 75, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hSpsLabel = CreateWindowExW(0, L"STATIC", L"Sps:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 140, wavinY + 20, 120, 18,
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 145, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWavOutLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
@@ -329,19 +329,19 @@ static void CreateMorseControls(HWND hWnd)
     // Create Tone edit box
     hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX, wavinY + 40, 65, 18,
+        radiobuttonX, wavinY + 40, 70, 18,
         hWnd, (HMENU)(INT_PTR)CID_TONE, g_hInst, NULL);
 
     // Create Wpm edit box
     hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX + 70, wavinY + 40, 65, 18,
+        radiobuttonX + 75, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_WPM, g_hInst, NULL);
 
     // Create Sps edit box
     hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
         NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX + 140, wavinY + 40, 65, 18,
+        radiobuttonX + 145, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
 
 	// Create radio buttons
