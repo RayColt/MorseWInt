@@ -1045,7 +1045,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // when done, free all allocated buffers and arrays
     for (int i = 0; i < argc_start; ++i) 
     {
-        free(argv_start[i]);   // safe even if argv was advanced
+        free(argv_start[i]);
     }
 
     free(argv_start);
