@@ -40,6 +40,8 @@ private:
 	long WaveSize;             // size of the wave file in bytes
 	long PcmCount;             // number of PCM samples
 	bool show;				   // to open media player after creation
+	// oscillator state for phase continuity between successive Tones() calls
+	double phase = 0.0;
 
 public:
 	/**

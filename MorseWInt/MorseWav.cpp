@@ -125,9 +125,9 @@ void MorseWav::Tones(int silence)
     const double omega = (twoPi * Tone) / Sps;
     const double coeff = 2.0 * std::cos(omega);
 
-    // initialize two starting values for the recurrence
-    double y_prev = std::sin(0.0);   // 0.0
-    double y_cur  = std::sin(omega); // first step
+    // initialize two starting values for the recurrence using the persistent phase
+    double y_prev = std::sin(phase);
+    double y_cur  = std::sin(phase + omega);
 
     if (stereo)
     {
@@ -166,6 +166,13 @@ void MorseWav::Tones(int silence)
     }
 
     PcmCount += static_cast<long>(numsamples); // increment frames (samples per channel)
+
+    // advance phase by the generated duration so next Tones() call is continuous
+    double phaseAdvance = numsamples * omega;
+    phase += phaseAdvance;
+    // keep phase normalized to [0, 2*pi)
+    while (phase >= twoPi) phase -= twoPi;
+    while (phase < 0.0) phase += twoPi;
 }
 
 /**
