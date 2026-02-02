@@ -19,7 +19,6 @@ Morse m; // global morse settings
 string action = ""; // global action setting
 
 // input limits
-// TODO: add multithreading on wav creation to prevent not responding below 1500 is saver
 const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT = 1000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
@@ -792,6 +791,12 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         return 0;
 }
 
+/**
+* Show MorseWInt application window
+* 
+* @param hwnd
+* @return int
+*/
 static int ShowMorseApp(HWND &hwnd)
 {
     WNDCLASS wc = {};
@@ -824,7 +829,11 @@ static int ShowMorseApp(HWND &hwnd)
     }
     return 0;
 }
-
+/**
+* Windows application entry point
+* 
+* @param hInstance
+*/
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // store instance handle in global variable
@@ -947,7 +956,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             cout << arg_in << "\n";
             cout << morse << "\n";
 			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
-
+            // TODO: add threading on wav creation to prevent not responding below 1500 is saver
             if (action == "wav")
             {
                 MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
