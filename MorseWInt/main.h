@@ -16,10 +16,34 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <process.h> // for _beginthreadex
+#include <thread>
+
+#define WM_MWAV_DONE (WM_USER + 1)
 
 // GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
+
+struct WavThreadParams {
+    std::string morse;
+    double tone;
+    double wpm;
+    double sps;
+    int channels;
+    bool openExternal;
+    HWND hwnd;
+};
+
+struct WavThreadResult {
+    std::wstring fullPath;
+    double tone;
+    int wpm;
+    int sps;
+    size_t waveSize;
+    size_t pcmCount;
+    int channels;
+};
 
 using namespace std;
 

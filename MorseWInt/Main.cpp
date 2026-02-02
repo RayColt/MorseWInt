@@ -20,8 +20,8 @@ string action = ""; // global action setting
 
 // input limits
 // TODO: add multithreading on wav creation to prevent not responding below 1500 is saver
-const int MAX_TXT_INPUT = 1500; // max chars for morse encoding/decoding
-const int MAX_MORSE_INPUT = 5000; // max chars for morse encoding/decoding
+const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
+const int MAX_MORSE_INPUT = 1000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 750; // max chars for sound generation
 const int MONO = 1;
 const int STEREO = 2;
@@ -31,6 +31,68 @@ const string error_in = "INPUT-ERROR";
 double frequency_in_hertz = 880.0;
 int words_per_minute = 33;
 int samples_per_second = 44100;
+
+/**
+* Wav thread procedure
+* 
+* @param pv
+*/
+static unsigned __stdcall WavThreadProc(void* pv)
+{
+    WavThreadParams* params = static_cast<WavThreadParams*>(pv);
+    if (!params) return 0;
+
+    // Copy parameters to local variables and free params
+    std::string morse = params->morse;
+    double tone = params->tone;
+    double wpm = params->wpm;
+    double sps = params->sps;
+    int channels = params->channels;
+    bool openExternal = params->openExternal;
+    HWND hwnd = params->hwnd;
+    delete params;
+
+    // Prepare result allocated for the UI thread to delete
+    WavThreadResult* res = new WavThreadResult();
+    try
+    {
+        // Heavy work on background thread
+        MorseWav mw(morse.c_str(), tone, wpm, sps, channels, openExternal);
+
+        // Populate success result
+        res->fullPath = StringToWString(mw.GetFullPath());
+        res->tone = tone;
+        res->wpm = static_cast<int>(wpm);
+        res->sps = static_cast<int>(sps);
+        res->waveSize = mw.GetWaveSize();
+        res->pcmCount = mw.GetPcmCount();
+        res->channels = channels;
+    }
+    catch (const std::exception& e)
+    {
+        // Post readable error back to UI
+        res->fullPath = StringToWString(std::string("ERROR: ") + e.what());
+        res->tone = tone;
+        res->wpm = static_cast<int>(wpm);
+        res->sps = static_cast<int>(sps);
+        res->waveSize = 0;
+        res->pcmCount = 0;
+        res->channels = channels;
+    }
+    catch (...)
+    {
+        res->fullPath = StringToWString(std::string("ERROR: unknown exception"));
+        res->tone = tone;
+        res->wpm = static_cast<int>(wpm);
+        res->sps = static_cast<int>(sps);
+        res->waveSize = 0;
+        res->pcmCount = 0;
+        res->channels = channels;
+    }
+
+    PostMessageW(hwnd, WM_MWAV_DONE, reinterpret_cast<WPARAM>(res), 0);
+    return 0;
+}
 
 /**
 * Make morse settings safe
@@ -148,18 +210,17 @@ static int ParseIntFromEdit(HWND hEdit, int defaultVal)
 * @param defaultVal
 * @return wstring
 */
-static double ParseDoubleFromEdit(HWND hEdit, double defaultVal) 
+static double ParseDoubleFromEdit(HWND hEdit, double defaultVal)
 {
     if (!hEdit) return defaultVal;
     std::wstring w = GetTextFromEditField(hEdit);
     if (w.empty()) return defaultVal;
     wchar_t* end = nullptr;
     errno = 0;
-    long val = wcstol(w.c_str(), &end, 10);
+    double val = wcstod(w.c_str(), &end);
     if (end == w.c_str() || errno == ERANGE) return defaultVal;
-    return static_cast<double>(val);
+    return val;
 }
-
 /**
 * Creates new output console
 *  or attaches to parent console - buggy
@@ -566,6 +627,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
 
                    int si = ParseIntFromEdit(hSps, samples_per_second);
                    double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
@@ -575,27 +637,34 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    wstring wpmin = StringToWString(to_string(wi));
                    wstring spsin = StringToWString(to_string(si));
 
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(WStringToString(tonein)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-				   Sleep(250); // wait for file to be written
-				   // TODO: place this in a function?
-                   wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L" kB)\r\n\r\n";
-                   wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
-                   wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
-                   wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount() * STEREO)) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
-                  
-                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
-                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
-                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
-                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
+                   // show a short "generating" message
+                   wstring generating = L"Generating WAV file, please wait...";
+                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
+
+                   // disable encode/decode while background work runs
+                   EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
+                   EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
+
+                   // allocate thread params
+                   WavThreadParams* p = new WavThreadParams();
+                   p->morse = tmp; // tmp is the morse string already computed
+                   p->tone = stod(WStringToString(tonein));
+                   p->wpm = stod(WStringToString(wpmin));
+                   p->sps = stod(WStringToString(spsin));
+                   p->channels = STEREO;
+                   p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
+                   p->hwnd = hWnd;
+
+                   // start thread (CRT-friendly)
+                   uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
+                   if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
                }
                else if (b6)
                {
                    tmp = m.morse_encode(WStringToString(in));
                    out = StringToWString(tmp);
-                   
+                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+
                    int si = ParseIntFromEdit(hSps, samples_per_second);
                    double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
                    int wi = ParseIntFromEdit(hWpm, words_per_minute);
@@ -604,20 +673,27 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                    wstring wpmin = StringToWString(to_string(wi));
                    wstring spsin = StringToWString(to_string(si));
 
-                   MorseWav mw = MorseWav(tmp.c_str(), stod(WStringToString(tonein)), stod(WStringToString(wpmin)), stod(WStringToString(spsin)), MONO, OPEN_EXTERNAL_MEDIAPLAYER);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                   Sleep(250); // wait for file to be written
-                   wstring wout = StringToWString(mw.GetFullPath()) + L" (" + StringToWString(trimDecimals(to_string(mw.GetWaveSize() / 1024.0), 2)) + L" kB)\r\n\r\n";
-                   wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
-                   wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
-                   wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
-                   wout += StringToWString(to_string(mw.GetPcmCount() * MONO)) + L" PCM samples in ";
-                   wout += StringToWString(trimDecimals(to_string(mw.GetPcmCount() / stod(spsin)), 2)) + L" s\r\n";
+                   // show a short "generating" message
+                   wstring generating = L"Generating WAV file, please wait...";
+                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
 
-                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
-                   SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
-                   SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
-                   SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
+                   // disable encode/decode while background work runs
+                   EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
+                   EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
+
+                   // allocate thread params
+                   WavThreadParams* p = new WavThreadParams();
+                   p->morse = tmp; // tmp is the morse string already computed
+                   p->tone = stod(WStringToString(tonein));
+                   p->wpm = stod(WStringToString(wpmin));
+                   p->sps = stod(WStringToString(spsin));
+                   p->channels = MONO;
+                   p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
+                   p->hwnd = hWnd;
+
+                   // start thread (CRT-friendly)
+                   uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
+                   if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
                }
                return 0;
             }
@@ -662,6 +738,35 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 return 0;
             }
             break;
+        }
+        case WM_MWAV_DONE:
+        {
+            WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
+            if (res)
+            {
+                // Compose same output the UI used to display
+                wstring spsin = StringToWString(to_string(res->sps));
+                wstring tonein = StringToWString(trimDecimals(to_string(res->tone), 3));
+                wstring wpmin = StringToWString(to_string(res->wpm));
+                wstring wout = res->fullPath + L" (" + StringToWString(trimDecimals(to_string(res->waveSize / 1024.0), 2)) + L" kB)\r\n\r\n";
+                wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
+                wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
+                wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
+                wout += StringToWString(to_string(res->pcmCount * res->channels)) + L" PCM samples in ";
+                wout += StringToWString(trimDecimals(to_string(res->pcmCount / stod(spsin)), 2)) + L" s\r\n";
+
+                SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
+                SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
+                SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
+                SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
+
+                // Re-enable buttons that were disabled while creating the wav
+                EnableWindow(GetDlgItem(hWnd, CID_ENCODE), TRUE);
+                EnableWindow(GetDlgItem(hWnd, CID_DECODE), TRUE);
+
+                delete res;
+            }
+            return 0;
         }
         case WM_PAINT:
         {

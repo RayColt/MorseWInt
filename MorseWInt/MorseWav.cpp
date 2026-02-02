@@ -84,44 +84,88 @@ long MorseWav::GetWaveSize()
 */
 void MorseWav::Tones(int silence)
 {
-    double seconds = Bit;   // keep seconds explicit
-    size_t numsamples = static_cast<size_t>(std::round(seconds * Sps)); // number of samples to generate
-    const double twoPiF = 2 * M_PI * Tone;
-    const double twoPi = 2.0 * M_PI;
-    constexpr int maxInt16 = std::numeric_limits<int16_t>::max(); // maximum for signed 16‑bit PCM
+    double seconds = Bit;   // seconds to generate for this quantum
+    size_t numsamples = static_cast<size_t>(std::round(seconds * Sps)); // samples per channel
+    if (numsamples == 0) return;
 
-    pcm.reserve(pcm.size() + numsamples);
-    if (NumChannels == 2)
+    const bool stereo = (NumChannels == 2);
+    size_t samplesToAdd = numsamples * (stereo ? 2u : 1u);
+
+    // Resize once up-front and write by index (avoids push_back overhead and reallocations)
+    size_t old = pcm.size();
+    pcm.resize(old + samplesToAdd);
+
+    constexpr double twoPi = 2.0 * M_PI;
+    constexpr int16_t maxInt16 = std::numeric_limits<int16_t>::max();
+    const double amp = Amplitude * static_cast<double>(maxInt16);
+
+    if (silence == 0)
+    {
+        // Fast path: fill zeros for silence
+        if (stereo)
+        {
+            for (size_t i = 0; i < numsamples; ++i)
+            {
+                pcm[old + i * 2]     = 0;
+                pcm[old + i * 2 + 1] = 0;
+            }
+        }
+        else
+        {
+            for (size_t i = 0; i < numsamples; ++i)
+            {
+                pcm[old + i] = 0;
+            }
+        }
+        PcmCount += static_cast<long>(numsamples); // PcmCount counts frames (samples-per-channel)
+        return;
+    }
+
+    // Tone generation: efficient recursive oscillator (no std::sin per-sample)
+    const double omega = (twoPi * Tone) / Sps;
+    const double coeff = 2.0 * std::cos(omega);
+
+    // initialize two starting values for the recurrence
+    double y_prev = std::sin(0.0);   // 0.0
+    double y_cur  = std::sin(omega); // first step
+
+    if (stereo)
     {
         for (size_t i = 0; i < numsamples; ++i)
         {
-            double t = static_cast<double>(i) / Sps; // time in seconds
-            double sampleL = std::sin(silence * twoPiF * t) * Amplitude;
-            double sampleR = std::sin(silence * twoPiF * t) * Amplitude;
+            double sample = (i == 0) ? y_prev : y_cur;
+            double scaled = sample * amp;
+            if (scaled > maxInt16) scaled = maxInt16;
+            else if (scaled < -maxInt16) scaled = -maxInt16;
+            int16_t outSample = static_cast<int16_t>(scaled);
 
-            // Clamp samples between -1.0 and 1.0 to avoid overflow when converting to int16_t
-            int16_t intSampleL = static_cast<int16_t>(clamp(sampleL, -1.0, 1.0) * maxInt16);
-            int16_t intSampleR = static_cast<int16_t>(clamp(sampleR, -1.0, 1.0) * maxInt16);
+            pcm[old + i * 2]     = outSample;
+            pcm[old + i * 2 + 1] = outSample;
 
-            pcm.push_back(intSampleL);
-            pcm.push_back(intSampleR);
-            PcmCount++;
+            double y_next = coeff * y_cur - y_prev;
+            y_prev = y_cur;
+            y_cur = y_next;
         }
     }
     else
     {
         for (size_t i = 0; i < numsamples; ++i)
         {
-            double t = static_cast<double>(i) / Sps;
-            double sampleL = std::sin(silence * twoPiF * t) * Amplitude;
+            double sample = (i == 0) ? y_prev : y_cur;
+            double scaled = sample * amp;
+            if (scaled > maxInt16) scaled = maxInt16;
+            else if (scaled < -maxInt16) scaled = -maxInt16;
+            int16_t outSample = static_cast<int16_t>(scaled);
 
-            // Clamp samples between -1.0 and 1.0 to avoid overflow when converting to int16_t
-            int16_t intSampleL = static_cast<int16_t>(clamp(sampleL, -1.0, 1.0) * maxInt16);
+            pcm[old + i] = outSample;
 
-            pcm.push_back(intSampleL);
-            PcmCount++;
+            double y_next = coeff * y_cur - y_prev;
+            y_prev = y_cur;
+            y_cur = y_next;
         }
     }
+
+    PcmCount += static_cast<long>(numsamples); // increment frames (samples per channel)
 }
 
 /**
