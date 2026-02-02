@@ -42,7 +42,7 @@ static unsigned __stdcall WavThreadProc(void* pv)
     if (!params) return 0;
 
     // Copy parameters to local variables and free params
-    std::string morse = params->morse;
+    string morse = params->morse;
     double tone = params->tone;
     double wpm = params->wpm;
     double sps = params->sps;
@@ -67,10 +67,10 @@ static unsigned __stdcall WavThreadProc(void* pv)
         res->pcmCount = mw.GetPcmCount();
         res->channels = channels;
     }
-    catch (const std::exception& e)
+    catch (const exception& e)
     {
         // Post readable error back to UI
-        res->fullPath = StringToWString(std::string("ERROR: ") + e.what());
+        res->fullPath = StringToWString(string("ERROR: ") + e.what());
         res->tone = tone;
         res->wpm = static_cast<int>(wpm);
         res->sps = static_cast<int>(sps);
@@ -80,7 +80,7 @@ static unsigned __stdcall WavThreadProc(void* pv)
     }
     catch (...)
     {
-        res->fullPath = StringToWString(std::string("ERROR: unknown exception"));
+        res->fullPath = StringToWString(string("ERROR: unknown exception"));
         res->tone = tone;
         res->wpm = static_cast<int>(wpm);
         res->sps = static_cast<int>(sps);
@@ -90,6 +90,32 @@ static unsigned __stdcall WavThreadProc(void* pv)
     }
 
     PostMessageW(hwnd, WM_MWAV_DONE, reinterpret_cast<WPARAM>(res), 0);
+    return 0;
+}
+
+/**
+* Console Wav thread procedure
+* 
+* @param pv
+*/
+static unsigned __stdcall ConsoleWavThreadProc(void* pv)
+{
+    ConsoleWavParams* p = static_cast<ConsoleWavParams*>(pv);
+    if (!p) return 0;
+    try
+    {
+        // Constructing MorseWav does the heavy work (and prints info).
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->openExternal);
+    }
+    catch (const exception& e)
+    {
+        cerr << "ERROR creating WAV: " << e.what() << endl;
+    }
+    catch (...)
+    {
+        cerr << "ERROR creating WAV: unknown exception" << endl;
+    }
+    delete p;
     return 0;
 }
 
@@ -193,7 +219,7 @@ string arg_string(char* arg)
 static int ParseIntFromEdit(HWND hEdit, int defaultVal) 
 {
     if (!hEdit) return defaultVal;
-    std::wstring w = GetTextFromEditField(hEdit);
+    wstring w = GetTextFromEditField(hEdit);
     if (w.empty()) return defaultVal;
     wchar_t* end = nullptr;
     errno = 0;
@@ -212,7 +238,7 @@ static int ParseIntFromEdit(HWND hEdit, int defaultVal)
 static double ParseDoubleFromEdit(HWND hEdit, double defaultVal)
 {
     if (!hEdit) return defaultVal;
-    std::wstring w = GetTextFromEditField(hEdit);
+    wstring w = GetTextFromEditField(hEdit);
     if (w.empty()) return defaultVal;
     wchar_t* end = nullptr;
     errno = 0;
@@ -956,17 +982,58 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             cout << arg_in << "\n";
             cout << morse << "\n";
 			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
-            // TODO: add threading on wav creation to prevent not responding below 1500 is saver
             if (action == "wav")
             {
-                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER);
+                // start background thread to create stereo wav
+                ConsoleWavParams* p = new ConsoleWavParams();
+                p->morse = morse;
+                p->tone = frequency_in_hertz;
+                p->wpm = words_per_minute;
+                p->sps = samples_per_second;
+                p->channels = STEREO;
+                p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
+
+                uintptr_t th = _beginthreadex(NULL, 0, &ConsoleWavThreadProc, p, 0, NULL);
+                if (th != 0)
+                {
+                    // wait for completion (you may remove waiting to fire-and-forget)
+                    WaitForSingleObject(reinterpret_cast<HANDLE>(th), INFINITE);
+                    CloseHandle(reinterpret_cast<HANDLE>(th));
+                }
+                else
+                {
+                    // fallback to synchronous if thread creation failed
+                    delete p;
+                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER); }
+                    catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
+                }
             }
             else if (action == "wav_mono")
             {
-                MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER);
+                // start background thread to create mono wav
+                ConsoleWavParams* p = new ConsoleWavParams();
+                p->morse = morse;
+                p->tone = frequency_in_hertz;
+                p->wpm = words_per_minute;
+                p->sps = samples_per_second;
+                p->channels = MONO;
+                p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
+
+                uintptr_t th = _beginthreadex(NULL, 0, &ConsoleWavThreadProc, p, 0, NULL);
+                if (th != 0)
+                {
+                    WaitForSingleObject(reinterpret_cast<HANDLE>(th), INFINITE);
+                    CloseHandle(reinterpret_cast<HANDLE>(th));
+                }
+                else
+                {
+                    delete p;
+                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER); }
+                    catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
+                }
             }
         }
-        cout << "Press [Enter] key to close program . . .\n";
+        cout << "\nPress [Enter] key to close program . . .\n";
         int c = getchar();
        return 0;
     }

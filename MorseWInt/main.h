@@ -17,7 +17,6 @@
 #include <cmath>
 #include <cstdint>
 #include <process.h> // for _beginthreadex
-#include <thread>
 
 #define WM_MWAV_DONE (WM_USER + 1)
 
@@ -43,6 +42,16 @@ struct WavThreadResult {
     size_t waveSize;
     size_t pcmCount;
     int channels;
+};
+
+struct ConsoleWavParams
+{
+    std::string morse;
+    double tone;
+    double wpm;
+    double sps;
+    int channels;
+    bool openExternal;
 };
 
 using namespace std;
