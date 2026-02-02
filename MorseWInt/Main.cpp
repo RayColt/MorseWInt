@@ -20,8 +20,8 @@ string action = ""; // global action setting
 
 // input limits
 const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
-const int MAX_MORSE_INPUT = 1000; // max chars for morse encoding/decoding
-const int MAX_SOUND_INPUT = 750; // max chars for sound generation
+const int MAX_MORSE_INPUT = 3000; // max chars for morse encoding/decoding
+const int MAX_SOUND_INPUT = 2999; // max chars for sound generation
 const int MONO = 1;
 const int STEREO = 2;
 
