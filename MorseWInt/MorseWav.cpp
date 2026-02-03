@@ -85,7 +85,7 @@ long MorseWav::GetWaveSize()
 void MorseWav::Tones(int silence)
 {
     double seconds = Bit;   // seconds to generate for this quantum
-    size_t numsamples = static_cast<size_t>(std::round(seconds * Sps)); // samples per channel
+    size_t numsamples = static_cast<size_t>(round(seconds * Sps)); // samples per channel
     if (numsamples == 0) return;
 
     const bool stereo = (NumChannels == 2);
@@ -96,7 +96,7 @@ void MorseWav::Tones(int silence)
     pcm.resize(old + samplesToAdd);
 
     constexpr double twoPi = 2.0 * M_PI;
-    constexpr int16_t maxInt16 = std::numeric_limits<int16_t>::max();
+    constexpr int16_t maxInt16 = numeric_limits<int16_t>::max();
     const double amp = Amplitude * static_cast<double>(maxInt16);
 
     if (silence == 0)
@@ -121,13 +121,13 @@ void MorseWav::Tones(int silence)
         return;
     }
 
-    // Tone generation: efficient recursive oscillator (no std::sin per-sample)
+    // Tone generation: efficient recursive oscillator (no sin per-sample)
     const double omega = (twoPi * Tone) / Sps;
-    const double coeff = 2.0 * std::cos(omega);
+    const double coeff = 2.0 * cos(omega);
 
     // initialize two starting values for the recurrence using the persistent phase
-    double y_prev = std::sin(phase);
-    double y_cur  = std::sin(phase + omega);
+    double y_prev = sin(phase);
+    double y_cur  = sin(phase + omega);
 
     if (stereo)
     {
@@ -224,7 +224,7 @@ typedef struct _wave
 * @param filename
 * @param pcmData
 */
-void MorseWav::WriteWav(const std::vector<int16_t> &pcmdata)
+void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
 {
     long data_size, wave_size, riff_size;
     int fmt_size = 16;
@@ -263,11 +263,11 @@ void MorseWav::WriteWav(const std::vector<int16_t> &pcmdata)
         }
     }
     // Open file for binary writing
-    ofstream out(FullPath, std::ios::binary);
+    ofstream out(FullPath, ios::binary);
     if (!out.is_open())
     {
         cerr << "Failed to open file: " << FullPath << '\n';
-        // optionally inspect errno: std::perror("open");
+        // optionally inspect errno: perror("open");
         exit(1);
     }
 
