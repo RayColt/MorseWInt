@@ -1075,6 +1075,7 @@ void PauseMedia()
     if (!g_mediaOpen)
         return;
     mciSendString(_T("pause MediaFile"), NULL, 0, NULL);
+	//mciSendString(_T("resume MediaFile"), NULL, 0, NULL); // TODO: implement toggle pause/resume
 }
 
 /**
