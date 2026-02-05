@@ -17,12 +17,22 @@
 #include <cmath>
 #include <cstdint>
 #include <process.h> // for _beginthreadex
+#include <tchar.h>
+#include <commdlg.h>
+#include <mmsystem.h>
 
 #define WM_MWAV_DONE (WM_USER + 1)
+
+#define IDM_FILE_OPEN   1000
+#define IDM_PLAY_PLAY   1001
+#define IDM_PLAY_PAUSE  1002
+#define IDM_PLAY_STOP   1003
 
 // GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
+// Multimedia library
+#pragma comment(lib, "winmm.lib")
 
 struct WavThreadParams {
     std::string morse;
@@ -52,9 +62,11 @@ struct ConsoleWavParams
     double sps;
     int channels;
     bool openExternal;
+	bool showExternal;
 };
 
 using namespace std;
+std::string FullPath = ""; // full path to save file
 
 int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
@@ -75,3 +87,10 @@ static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM
 
 static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+void ClosePlayer();
+void PlayMedia();
+void PauseMedia();
+void StopMedia();
+void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix);
+BOOL InitWavPlayerWindow(HWND hWndParent);
+static MCIERROR OpenMediaFileAndPlay(const std::wstring& path, HWND hWndParent);
