@@ -44,11 +44,9 @@ static unsigned __stdcall WavThreadProc(void* pv)
 {
     WavThreadParams* p = static_cast<WavThreadParams*>(pv);
     if (!p) return 0;
-    HWND hwnd = p->hwnd;
-   
+    HWND hwnd = p->hwnd;   
     // Prepare result allocated for the UI thread to delete
     WavThreadResult* res = new WavThreadResult();
-
     try
     {
         // Heavy work on background thread
