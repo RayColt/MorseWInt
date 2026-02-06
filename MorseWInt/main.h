@@ -78,10 +78,10 @@ string arg_string(char* arg);
 
 wstring GetTextFromEditField(HWND hWnd);
 string trimDecimals(const std::string& s, int decimals);
-wstring StringToWString(const string& str);
 
 wstring StringToWString(const string& str);
 string WStringToString(const wstring& wstr);
+
 int ParseIntFromEdit(HWND hEdit, int defaultVal);
 double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
 
