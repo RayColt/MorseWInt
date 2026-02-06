@@ -20,6 +20,8 @@
 #include <tchar.h>
 #include <commdlg.h>
 #include <mmsystem.h>
+#include <ctype.h>
+#include <strsafe.h>
 
 #define WM_MWAV_DONE (WM_USER + 1)
 

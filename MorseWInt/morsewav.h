@@ -26,7 +26,7 @@
 class MorseWav
 {
 private:
-	const std::string SaveDir = "C:\\Users\\User\\Desktop\\wav-files-morse\\"; // output directory - use this format
+	const std::string SaveDir = "C:\\Users\\Usere\\Desktop\\wav-files-morse\\"; // output directory - use this format
 	std::string FullPath = ""; // full path to save file
 	const char* MorseCode;     // morse code string
 	int NumChannels;           // 1 = mono, 2 = stereo

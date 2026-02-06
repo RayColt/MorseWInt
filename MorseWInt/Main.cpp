@@ -7,8 +7,6 @@
 * @version 01111 010101 11111
 */
 #include "main.h"
-#include <ctype.h>
-#include <strsafe.h>
 
 // config options
 bool NEW_CONSOLE = true; // to make active change 1244-1251 - IF USING CONSOLE MODUS
