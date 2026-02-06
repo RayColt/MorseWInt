@@ -91,7 +91,7 @@ static unsigned __stdcall WavThreadProc(void* pv)
 * 
 * @param pv
 */
-static unsigned __stdcall ConsoleWavThreadProc(void* pv) // TODO: add ouput with WavThreadResult
+static unsigned __stdcall ConsoleWavThreadProc(void* pv)
 {
     ConsoleWavParams* p = static_cast<ConsoleWavParams*>(pv);
     if (!p) return 0;
@@ -1228,13 +1228,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 		// determine action
         if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
-        else if (strcmp(argv[1], "e") == 0) { action = "encode"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "d") == 0) { action = "decode"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "b") == 0) { action = "binary"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "he") == 0) { action = "hex"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; NEW_CONSOLE = true; }
-        else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; NEW_CONSOLE = true; }
+        else if (strcmp(argv[1], "e") == 0) { action = "encode"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "d") == 0) { action = "decode"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "b") == 0) { action = "binary"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "he") == 0) { action = "hex"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; NEW_CONSOLE = false; }
         // command line mode
         AttachToConsole(NEW_CONSOLE);
         // check options
