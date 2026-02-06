@@ -85,7 +85,6 @@ string WStringToString(const wstring& wstr);
 int ParseIntFromEdit(HWND hEdit, int defaultVal);
 double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
 
-
 static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
     UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
