@@ -297,7 +297,7 @@ static void CreateMorseControls(HWND hWnd)
 
     // Create ms font
     HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-    HFONT hFontMorse = CreateFontW(12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
+    HFONT hFontMorse = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
     HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
 	HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
     
@@ -378,13 +378,13 @@ static void CreateMorseControls(HWND hWnd)
 
 	// Create play, pause, stop buttons
     hPlay = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 45, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
+        radiobuttonX + 70, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
 
     hPause = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 90, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
+        radiobuttonX + 105, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
 
     hStop = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 135, wavinY + 215, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
+        radiobuttonX + 140, wavinY + 215, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
 
 	// Create radio buttons
     HWND hMorse = CreateWindowExW(
@@ -611,12 +611,22 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
 			// Handle media player button clicks and edit changes
             if (id == CID_PLAY && code == BN_CLICKED)
             {
-                PlayMedia();
+                EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
+                wstring mode;
+                if (QueryMode(mode) && mode == L"paused")
+                {
+                    ResumeMedia();
+                }
+                else 
+                {
+                    PlayMedia(hWnd);
+                }
                 return 0;
             }
             if (id == CID_PAUSE && code == BN_CLICKED)
             {
-				PauseMedia(); // TODO: implement full pause functionality
+                PauseMedia();
+                EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
                 return 0;
             }
             if (id == CID_STOP && code == BN_CLICKED)
@@ -817,6 +827,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         }
         case WM_MWAV_DONE:
         {
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
             WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
             if (res)
             {
@@ -900,7 +911,11 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             }
             case CID_PAUSE: // Pause (two bars)
             {
-                HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
+                LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT)lParam;
+                // choose color based on state
+                bool disabled = (dis->itemState & ODS_DISABLED) != 0;
+                COLORREF col = disabled ? GetSysColor(COLOR_GRAYTEXT) : RGB(0, 0, 0);
+                HBRUSH b = CreateSolidBrush(col);
                 RECT bar = { cx - 5, cy - 6, cx - 2, cy + 6 };
                 FillRect(dc, &bar, b);
                 bar = { cx + 2, cy - 6, cx + 5, cy + 6 };
@@ -944,6 +959,8 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     }
     return 0;
 }
+
+// ---------------- MorseWInt MCI Functions ----------------
 
 /**
 * Initialize hidden window for MCI playback
@@ -1040,38 +1057,96 @@ static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hWndParent)
 }
 
 /**
-* Play Wav file using MCI
+* Get MCI error string for given error code
+* 
+* @param err
+* @param out
 */
-void PlayMedia()
+static void GetMciError(MCIERROR err, wstring& out) 
 {
-    //OpenMediaFileAndPlay(StringToWString(FullPath), g_hWnd);
-    if (!g_mediaOpen)
-        return;
-
-    mciSendString(_T("seek MediaFile to start"), NULL, 0, NULL);
-    mciSendString(_T("play MediaFile notify"), NULL, 0, NULL);
+    if (err == 0) { out.clear(); return; }
+    wchar_t buf[256] = {};
+    mciGetErrorStringW(err, buf, (DWORD)size(buf));
+    out = buf;
 }
 
 /**
-* Pause MCI playback
+* Query current mode of media file (playing, paused, stopped, etc.)
+* 
+* @param mode
+* @return bool
 */
-void PauseMedia()
+static bool QueryMode(wstring& mode) 
 {
-    if (!g_mediaOpen)
-        return;
-    mciSendString(_T("pause MediaFile"), NULL, 0, NULL);
-	//mciSendString(_T("resume MediaFile"), NULL, 0, NULL); // TODO: implement toggle pause/resume
+    wchar_t buf[128] = {};
+    MCIERROR rc = mciSendStringW(L"status MediaFile mode", buf, (UINT)size(buf), NULL);
+    if (rc != 0) return false;
+    mode = buf; // "playing", "paused", "stopped", etc.
+    return true;
 }
 
 /**
-* Stop MCI playback and reset to start
+* Play media file from current position or start if stopped. 
+* Optionally receive MM_MCINOTIFY messages in hwndNotify.
+* 
+* @param hwndNotify
 */
-void StopMedia()
+void PlayMedia(HWND hwndNotify = NULL) 
 {
-    if (!g_mediaOpen)
+    MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+    if (rc) { wstring err; GetMciError(rc, err); return; }
+
+    // pass hwndNotify if you want MM_MCINOTIFY messages
+    rc = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
+    if (rc) { wstring err; GetMciError(rc, err); }
+}
+
+/**
+* Pause media file if currently playing. 
+*/
+void PauseMedia() 
+{
+    MCIERROR rc = mciSendStringW(L"pause MediaFile", NULL, 0, NULL);
+    if (rc) { wstring err; GetMciError(rc, err); }
+    // do NOT call resume here
+}
+
+/**
+* Resume media file if currently paused, or play if stopped.
+*/
+void ResumeMedia() 
+{
+    wstring mode;
+    if (!QueryMode(mode)) {
+        // failed to query; try play as fallback
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
         return;
-    mciSendString(_T("stop MediaFile"), NULL, 0, NULL);
-    mciSendString(_T("seek MediaFile to start"), NULL, 0, NULL);
+    }
+
+    if (mode == L"paused") 
+    {
+        MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
+    }
+    else if (mode == L"stopped") 
+    {
+        // resume won't work; start playing from current position or start
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
+    }
+    else { /* already playing or unknown state */ }
+}
+
+/**
+* Stop media file if currently playing or paused, and seek to start.
+*/
+void StopMedia() 
+{
+    MCIERROR rc = mciSendStringW(L"stop MediaFile", NULL, 0, NULL);
+    if (rc) { wstring err; GetMciError(rc, err); }
+    rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+    if (rc) { wstring err; GetMciError(rc, err); }
 }
 
 /**

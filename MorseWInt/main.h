@@ -92,9 +92,11 @@ static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM
 static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void ClosePlayer();
-void PlayMedia();
+void PlayMedia(HWND hWndParent);
 void PauseMedia();
+void ResumeMedia();
 void StopMedia();
+static bool QueryMode(std::wstring& mode);
 void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix);
 BOOL InitWavPlayerWindow(HWND hWndParent);
 static MCIERROR OpenMediaFileAndPlay(const std::wstring& path, HWND hWndParent);
