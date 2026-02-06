@@ -52,7 +52,6 @@ static unsigned __stdcall WavThreadProc(void* pv)
         // Heavy work on background thread
         MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, false, false);
 
-        // Populate success result
         res->fullPath = StringToWString(mw.GetFullPath());
 		FullPath = mw.GetFullPath();
         res->tone = p->tone;
@@ -64,7 +63,6 @@ static unsigned __stdcall WavThreadProc(void* pv)
     }
     catch (const exception& e)
     {
-        // Post readable error back to UI
         res->fullPath = StringToWString(string("ERROR: ") + e.what());
         res->tone = p->tone;
         res->wpm = static_cast<int>(p->wpm);
@@ -99,7 +97,6 @@ static unsigned __stdcall ConsoleWavThreadProc(void* pv) // TODO: add ouput with
     if (!p) return 0;
     try
     {
-        // Constructing MorseWav does the heavy work (and prints info).
         MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->openExternal, p->showExternal);
     }
     catch (const exception& e)
