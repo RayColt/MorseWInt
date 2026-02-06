@@ -41,6 +41,8 @@ struct WavThreadParams {
     double sps;
     int channels;
     bool openExternal;
+	bool showExternal;
+	bool saveDirOk;
     HWND hwnd;
 };
 
@@ -66,6 +68,7 @@ struct ConsoleWavParams
 };
 
 using namespace std;
+bool SaveDirOk = false;   // directory creation status
 std::string FullPath = ""; // full path to save file
 
 int get_options(int argc, char* argv[]);

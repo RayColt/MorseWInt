@@ -263,7 +263,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
         else
         {
             cerr << "Error creating directory\n";
-            exit(1);
+            //exit(1);
         }
     }
     // Open file for binary writing
@@ -272,7 +272,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
     {
         cerr << "Failed to open file: " << FullPath << '\n';
         // optionally inspect errno: perror("open");
-        exit(1);
+        //exit(1);
     }
 
     // RIFF header

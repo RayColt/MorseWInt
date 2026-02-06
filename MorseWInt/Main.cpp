@@ -44,59 +44,51 @@ int samples_per_second = 44100;
 */
 static unsigned __stdcall WavThreadProc(void* pv)
 {
-    WavThreadParams* params = static_cast<WavThreadParams*>(pv);
-    if (!params) return 0;
-
-    // Copy parameters to local variables and free params
-    string morse = params->morse;
-    double tone = params->tone;
-    double wpm = params->wpm;
-    double sps = params->sps;
-    int channels = params->channels;
-    bool openExternal = params->openExternal;
-    HWND hwnd = params->hwnd;
-    delete params;
-
+    WavThreadParams* p = static_cast<WavThreadParams*>(pv);
+    if (!p) return 0;
+    HWND hwnd = p->hwnd;
+   
     // Prepare result allocated for the UI thread to delete
     WavThreadResult* res = new WavThreadResult();
+
     try
     {
         // Heavy work on background thread
-        MorseWav mw(morse.c_str(), tone, wpm, sps, channels, false, false);
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, false, false);
 
         // Populate success result
         res->fullPath = StringToWString(mw.GetFullPath());
 		FullPath = mw.GetFullPath();
-        res->tone = tone;
-        res->wpm = static_cast<int>(wpm);
-        res->sps = static_cast<int>(sps);
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
         res->waveSize = mw.GetWaveSize();
         res->pcmCount = mw.GetPcmCount();
-        res->channels = channels;
+        res->channels = p->channels;
     }
     catch (const exception& e)
     {
         // Post readable error back to UI
         res->fullPath = StringToWString(string("ERROR: ") + e.what());
-        res->tone = tone;
-        res->wpm = static_cast<int>(wpm);
-        res->sps = static_cast<int>(sps);
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
         res->waveSize = 0;
         res->pcmCount = 0;
-        res->channels = channels;
+        res->channels = p->channels;
     }
     catch (...)
     {
         res->fullPath = StringToWString(string("ERROR: unknown exception"));
-        res->tone = tone;
-        res->wpm = static_cast<int>(wpm);
-        res->sps = static_cast<int>(sps);
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
         res->waveSize = 0;
         res->pcmCount = 0;
-        res->channels = channels;
+        res->channels = p->channels;
     }
-
     PostMessageW(hwnd, WM_MWAV_DONE, reinterpret_cast<WPARAM>(res), 0);
+    delete p;
     return 0;
 }
 
