@@ -93,7 +93,7 @@ static unsigned __stdcall WavThreadProc(void* pv)
 * 
 * @param pv
 */
-static unsigned __stdcall ConsoleWavThreadProc(void* pv)
+static unsigned __stdcall ConsoleWavThreadProc(void* pv) // TODO: add ouput with WavThreadResult
 {
     ConsoleWavParams* p = static_cast<ConsoleWavParams*>(pv);
     if (!p) return 0;
