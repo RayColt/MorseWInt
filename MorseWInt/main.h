@@ -79,7 +79,6 @@ string arg_string(char* arg);
 wstring GetTextFromEditField(HWND hWnd);
 string trimDecimals(const std::string& s, int decimals);
 wstring StringToWString(const string& str);
-double wstring_to_double(const std::wstring& s);
 
 wstring StringToWString(const string& str);
 string WStringToString(const wstring& wstr);
