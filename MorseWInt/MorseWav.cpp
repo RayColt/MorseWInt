@@ -263,6 +263,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
         else
         {
             cerr << "Error creating directory\n";
+            throw runtime_error("Error creating directory");
             //exit(1);
         }
     }
@@ -272,6 +273,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
     {
         cerr << "Failed to open file: " << FullPath << '\n';
         // optionally inspect errno: perror("open");
+        throw runtime_error("Error opening file or directory");
         //exit(1);
     }
 
