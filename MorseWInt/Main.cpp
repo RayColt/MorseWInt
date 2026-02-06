@@ -9,7 +9,7 @@
 #include "main.h"
 
 // config options
-bool NEW_CONSOLE = true; // to make active change 1244-1251 - IF USING CONSOLE MODUS
+bool NEW_CONSOLE = false; // open a new console for output, false for recommended cmd.exe, true for powershell - buggy
 const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with external media player or not - CONSOLE MODUS ONLY
 const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external media player or not - CONSOLE MODUS ONLY
 
@@ -1228,13 +1228,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 		// determine action
         if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
-        else if (strcmp(argv[1], "e") == 0) { action = "encode"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "d") == 0) { action = "decode"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "b") == 0) { action = "binary"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "he") == 0) { action = "hex"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; NEW_CONSOLE = false; }
-        else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; NEW_CONSOLE = false; }
+        else if (strcmp(argv[1], "e") == 0) { action = "encode"; }
+        else if (strcmp(argv[1], "d") == 0) { action = "decode"; }
+        else if (strcmp(argv[1], "b") == 0) { action = "binary"; }
+        else if (strcmp(argv[1], "he") == 0) { action = "hex"; }
+        else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; }
+        else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; }
+        else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; }
         // command line mode
         AttachToConsole(NEW_CONSOLE);
         // check options
@@ -1273,7 +1273,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (action == "hexbindec") { cout << m.hexdecimal_bin_txt(arg_in, 1) << "\n"; }
         else if (action == "sound" || action == "wav" || action == "wav_mono")
         {
-            NEW_CONSOLE = true;
             string morse = m.morse_encode(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
@@ -1307,7 +1306,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             }
             else if (action == "wav_mono")
             {
-                NEW_CONSOLE = true;
                 // start background thread to create mono wav
                 ConsoleWavParams* p = new ConsoleWavParams();
                 p->morse = morse;
@@ -1332,8 +1330,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-        cout << "\nPress [Enter] key to close program . . .\n";
-        int c = getchar();
+        if (NEW_CONSOLE == true)
+        {
+            cout << "\nPress [Enter] key to close program . . .\n";
+            int c = getchar();
+        }
        return 0;
     }
     else
