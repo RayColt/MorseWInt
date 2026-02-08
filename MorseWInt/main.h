@@ -25,10 +25,13 @@
 
 #define WM_MWAV_DONE (WM_USER + 1)
 
-#define IDM_FILE_OPEN   1000
-#define IDM_PLAY_PLAY   1001
-#define IDM_PLAY_PAUSE  1002
-#define IDM_PLAY_STOP   1003
+#define IDM_FILE_OPEN       1000
+#define IDM_PLAY_PLAY       1001
+#define IDM_PLAY_PAUSE      1002
+#define IDM_PLAY_STOP       1003
+#define IDM_SLIDER_UPDATE   1004
+#define SLIDER_TIMER_MS     1005
+
 
 // GUI includes
 #include <commctrl.h>
@@ -96,6 +99,9 @@ void PauseMedia();
 void ResumeMedia();
 void StopMedia();
 static bool QueryMode(std::wstring& mode);
+static bool QueryLength(UINT& lengthMs);
+static bool QueryPosition(UINT& posMs);
+void SetTracker(HWND hTrackbar);
 void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix);
-BOOL InitWavPlayerWindow(HWND hWndParent);
+BOOL InitWavPlayerWindow(HWND hWndParent); // create hidden child window to get a HWND for MCI notifications 
 static MCIERROR OpenMediaFileAndPlay(const std::wstring& path, HWND hWndParent);

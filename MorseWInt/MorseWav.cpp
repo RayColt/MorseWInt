@@ -1,5 +1,6 @@
 ﻿#include "morsewav.h"
 #include <shellapi.h>
+#include "mmeapi.h "
 #pragma comment(lib, "Shell32.lib")
 
 using namespace std;
@@ -208,19 +209,6 @@ void MorseWav::MorseTones(const char* code)
         if (c == ' ') Space();
     }
 }
- 
-typedef unsigned short WORD;
-typedef unsigned long DWORD;
-typedef struct _wave
-{
-    WORD  wFormatTag;      // format type
-    WORD  nChannels;       // number of channels (i.e. mono, stereo...)
-    DWORD nSamplesPerSec;  // sample rate
-    DWORD nAvgBytesPerSec; // for buffer estimation
-    WORD  nBlockAlign;     // block size of data
-    WORD  wBitsPerSample;  // number of bits per sample of mono data
-    WORD  cbSize;          // size, in bytes, of extra format information 
-} WAVE;
 
 /**
 * Write wav file
@@ -234,20 +222,19 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
     int fmt_size = 16;
     FILE* file = NULL;
 
-	WAVE wave = { 0 };
-    wave.wFormatTag = 0x1;
-    wave.nChannels = NumChannels; // 1 or 2 ~ mono or stereo
-    wave.wBitsPerSample = 16; // 8 or 16
-    wave.nBlockAlign = (wave.wBitsPerSample * wave.nChannels) / 8;
-    wave.nSamplesPerSec = (DWORD)Sps;
-    wave.nAvgBytesPerSec = wave.nSamplesPerSec * wave.nBlockAlign;
-    wave.cbSize = 0;
+    WAVEFORMATEX wfx = { 0 }; // mmeapi.h defines a WAVEFORMAT, but we need WAVEFORMATEX with cbSize
+    wfx.wFormatTag = WAVE_FORMAT_PCM;
+    wfx.nChannels = NumChannels; // 1 or 2 ~ mono or stereo
+    wfx.wBitsPerSample = 16; // 8 or 16
+    wfx.nBlockAlign = (wfx.wBitsPerSample * wfx.nChannels) / 8;
+    wfx.nSamplesPerSec = (DWORD)Sps;
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+    wfx.cbSize = 0;
 
-    wave_size = sizeof wave;
-    data_size = (PcmCount * wave.wBitsPerSample * wave.nChannels) / 8;
+    wave_size = sizeof wfx;
+    data_size = (PcmCount * wfx.wBitsPerSample * wfx.nChannels) / 8;
     riff_size = fmt_size + wave_size + data_size; // 36 + data_size
 	WaveSize = riff_size + 8; // 44 + dataSize
-
 
     // Try to create the directory
     if (_mkdir(SaveDir.c_str()) == 0)
@@ -285,7 +272,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
     // fmt subchunk
     out.write("fmt ", 4);
     out.write(reinterpret_cast<const char*>(&wave_size), 4);
-    out.write(reinterpret_cast<const char*>(&wave), wave_size);
+    out.write(reinterpret_cast<const char*>(&wfx), wave_size);
 
     // data subchunk
     out.write("data", 4);

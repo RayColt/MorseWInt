@@ -35,81 +35,7 @@ double frequency_in_hertz = 880.0;
 int words_per_minute = 33;
 int samples_per_second = 44100;
 
-/**
-* Wav thread procedure
-* 
-* @param pv
-*/
-static unsigned __stdcall WavThreadProc(void* pv)
-{
-    WavThreadParams* p = static_cast<WavThreadParams*>(pv);
-    if (!p) return 0;
-    HWND hwnd = p->hwnd;   
-    // Prepare result allocated for the UI thread to delete
-    WavThreadResult* res = new WavThreadResult();
-    try
-    {
-        // Heavy work on background thread
-        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, false, false);
-
-        res->fullPath = StringToWString(mw.GetFullPath());
-		FullPath = mw.GetFullPath();
-        res->tone = p->tone;
-        res->wpm = static_cast<int>(p->wpm);
-        res->sps = static_cast<int>(p->sps);
-        res->waveSize = mw.GetWaveSize();
-        res->pcmCount = mw.GetPcmCount();
-        res->channels = p->channels;
-    }
-    catch (const exception& e)
-    {
-        res->fullPath = StringToWString(string("ERROR: ") + e.what());
-        res->tone = p->tone;
-        res->wpm = static_cast<int>(p->wpm);
-        res->sps = static_cast<int>(p->sps);
-        res->waveSize = 0;
-        res->pcmCount = 0;
-        res->channels = p->channels;
-    }
-    catch (...)
-    {
-        res->fullPath = StringToWString(string("ERROR: unknown exception"));
-        res->tone = p->tone;
-        res->wpm = static_cast<int>(p->wpm);
-        res->sps = static_cast<int>(p->sps);
-        res->waveSize = 0;
-        res->pcmCount = 0;
-        res->channels = p->channels;
-    }
-    PostMessageW(hwnd, WM_MWAV_DONE, reinterpret_cast<WPARAM>(res), 0);
-    delete p;
-    return 0;
-}
-
-/**
-* Console Wav thread procedure
-* 
-* @param pv
-*/
-static unsigned __stdcall ConsoleWavThreadProc(void* pv)
-{
-    ConsoleWavParams* p = static_cast<ConsoleWavParams*>(pv);
-    if (!p) return 0;
-    try
-    {
-        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->openExternal, p->showExternal);
-    }
-    catch (const exception& e)
-    {
-        cerr << "ERROR creating WAV: " << e.what() << endl;
-    }
-    catch (...)
-    {
-        cerr << "ERROR creating WAV: unknown exception" << endl;
-    }
-    delete p;
-    return 0;
-}
+// ---------------- MorseWInt Helper Functions ----------------
 
 /**
 * Make morse settings safe
@@ -266,13 +192,74 @@ static void AttachToConsole(BOOLEAN newconsole)
     freopen_s(&fp, "CONIN$", "r", stdin);
 }
 
+
+/**
+* Convert string to wstring
+*
+* @param str
+* @return wstring
+*/
+wstring StringToWString(const string& str)
+{
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
+    wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+
+/**
+* Convert wstring to string
+*
+* @param wstr
+* @return string
+*/
+string WStringToString(const wstring& wstr)
+{
+    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
+    string strTo(size_needed, 0);
+    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    return strTo;
+}
+
+/**
+* Get text from edit field
+*
+* @param hWnd
+* @return wstring
+*/
+wstring GetTextFromEditField(HWND hWnd)
+{
+    int len = (int)SendMessageW(hWnd, WM_GETTEXTLENGTH, 0, 0);
+    wstring buf(len + 1, L'\0');
+    SendMessageW(hWnd, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
+    buf.resize(wcslen(buf.c_str()));
+    return buf;
+}
+
+/**
+* Trim decimals from string representation of float
+*
+* @param s
+* @param decimals
+* @return string
+*/
+string trimDecimals(const string& s, int decimals)
+{
+    int pos = s.find('.');
+    if (pos == string::npos) return s;
+    int end = pos + 1 + decimals;
+    if (end >= s.size()) return s;
+    return s.substr(0, end);
+}
+
 // ---------------- MorseWInt GUI ----------------
 
 enum 
 {
 	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, 
 	CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109, CID_HELP = 110,
-	CID_TONE = 111, CID_WPM = 112, CID_SPS = 113, CID_PROG = 114, CID_PLAY = 115, CID_PAUSE = 116, CID_STOP = 117
+	CID_TONE = 111, CID_WPM = 112, CID_SPS = 113, CID_PROG = 114, CID_PLAY = 115, CID_PAUSE = 116, CID_STOP = 117,
+	CID_TRACK = 118
 };
 
 // Global handles to child controls
@@ -286,6 +273,7 @@ HWND hCountLabel = NULL;
 HWND hPlay = NULL;
 HWND hPause = NULL;
 HWND hStop = NULL;
+HWND g_hTrack;
 
 // Create child controls on given window
 static void CreateMorseControls(HWND hWnd)
@@ -334,10 +322,6 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 255, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
-	//HWND hHelpLabel = CreateWindowExW(0, L"STATIC", L"Command line Help or Usage: morse.exe -h or -help", 
-     //   WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 400, 450, 12,
- 	//    hWnd, (HMENU)CID_HELP, g_hInst, NULL);
-
     // Create edit box
     hEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
@@ -378,13 +362,13 @@ static void CreateMorseControls(HWND hWnd)
 
 	// Create play, pause, stop buttons
     hPlay = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 70, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
+        radiobuttonX + 70, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
 
     hPause = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 105, wavinY + 215, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
+        radiobuttonX + 105, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
 
     hStop = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 140, wavinY + 215, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
+        radiobuttonX + 140, wavinY + 235, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
 
 	// Create radio buttons
     HWND hMorse = CreateWindowExW(
@@ -445,10 +429,22 @@ static void CreateMorseControls(HWND hWnd)
         NULL
     );
 
-	// Initialize progress bar
+	// Initialize and create progress bar
+    INITCOMMONCONTROLSEX iccp = { sizeof(iccp), ICC_PROGRESS_CLASS };
+    InitCommonControlsEx(&iccp);
     SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
 	SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
+
+	// Initialize and create trackbar for MCI player
+    INITCOMMONCONTROLSEX iccb = { sizeof(iccb), ICC_BAR_CLASSES };
+    InitCommonControlsEx(&iccb);
+    g_hTrack = CreateWindowExW(0, TRACKBAR_CLASSW, NULL,
+        WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
+        radiobuttonX, radiobuttonY + 365, 240, 15, hWnd, (HMENU)CID_TRACK, NULL, NULL);
+    //SendMessage(g_hTrack, TBM_SETRANGE, TRUE, MAKELONG(0, 1000));
+    //SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
+    SetTracker(g_hTrack);
 
 	// Create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
@@ -490,480 +486,11 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
 }
 
-/**
-* Convert string to wstring
-* 
-* @param str
-* @return wstring
-*/
-wstring StringToWString(const string& str)
-{
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), NULL, 0);
-    wstring wstrTo(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.size(), &wstrTo[0], size_needed);
-    return wstrTo;
-}
-
-/**
-* Convert wstring to string
-* 
-* @param wstr
-* @return string
-*/
-string WStringToString(const wstring& wstr)
-{
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), NULL, 0, NULL, NULL);
-    string strTo(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
-    return strTo;
-}
-
-/**
-* Get text from edit field
-* 
-* @param hWnd
-* @return wstring
-*/
-wstring GetTextFromEditField(HWND hWnd)
-{
-    int len = (int)SendMessageW(hWnd, WM_GETTEXTLENGTH, 0, 0);
-    wstring buf(len + 1, L'\0');
-    SendMessageW(hWnd, WM_GETTEXT, (WPARAM)(len + 1), (LPARAM)buf.data());
-    buf.resize(wcslen(buf.c_str()));
-    return buf;
-}
-
-/**
-* Trim decimals from string representation of float
-* 
-* @param s
-* @param decimals
-* @return string
-*/
-string trimDecimals(const string& s, int decimals) 
-{ 
-    int pos = s.find('.'); 
-    if (pos == string::npos) return s; 
-    int end = pos + 1 + decimals; 
-    if (end >= s.size()) return s; 
-    return s.substr(0, end); 
-}
-
-/**
-* Subclass procedure for edit controls: handle Ctrl+A -> select all
-* 
-* @param hwnd
-* @param uMsg
-* @param wParam
-* @param lParam
-* @param uIdSubclass
-* @param dwRefData
-* @return LRESULT
-*/
-static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
-    UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
-{
-    if (uMsg == WM_KEYDOWN)
-    {
-        // check Ctrl + A (handle both 'A' and 'a')
-        if ((wParam == 'A' || wParam == 'a') && (GetKeyState(VK_CONTROL) & 0x8000))
-        {
-            SendMessageW(hwnd, EM_SETSEL, 0, -1); // select all text
-            return 0; // consumed
-        }
-    }
-    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
-}
-
-/**
-* Window Procedure for MorseWInt
-*
-* @param hWnd
-* @param msg
-* @param wParam
-* @param lParam
-* 
-* @return LRESULT
-*/
-static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    switch (msg)
-    {
-        case WM_CREATE:
-        {
-            if (!InitWavPlayerWindow(hWnd))
-            {
-                MessageBox(hWnd, _T("Failed to create player window."), _T("Error"), MB_ICONERROR);
-                PostQuitMessage(1);
-            }
-            CreateMorseControls(hWnd);
-			wstring out = L"See command line for help:\r\n morse.exe -h or -help";
-            SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)out.c_str());
-            
-            return 0;
-        }
-        case WM_COMMAND:
-        {
-            int id = LOWORD(wParam);
-            int code = HIWORD(wParam);
-            HWND hCtrl = (HWND)lParam;
-
-			// Handle media player button clicks and edit changes
-            if (id == CID_PLAY && code == BN_CLICKED)
-            {
-                EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
-                wstring mode;
-                if (QueryMode(mode) && mode == L"paused")
-                {
-                    ResumeMedia();
-                }
-                else 
-                {
-                    PlayMedia(hWnd);
-                }
-                return 0;
-            }
-            if (id == CID_PAUSE && code == BN_CLICKED)
-            {
-                PauseMedia();
-                EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
-                return 0;
-            }
-            if (id == CID_STOP && code == BN_CLICKED)
-            {
-                StopMedia();
-                return 0;
-            }
-
-            if (id == CID_EDIT && code == EN_CHANGE) 
-            {
-                int len = GetWindowTextLengthW(hEdit); // number of characters
-                int left = MAX_TXT_INPUT - len;
-                wstring out = StringToWString(to_string(left));
-                SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                if (len == 0)
-                {
-                    SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
-                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255)); // bar color
-                }
-                if (len > 0 && len < MAX_TXT_INPUT)
-                {
-                    int percent = (len * 100) / MAX_TXT_INPUT;
-                    if (percent > 100) percent = 100;
-                    SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
-                    if (percent < 90)
-                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
-                    if (percent >= 95)
-                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
-                    if (percent >= 99)
-                        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
-                }
-            }
-
-			bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
-            if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
-            else if(IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
-            else if(IsDlgButtonChecked(hWnd, CID_HEX) == BST_CHECKED) { b3 = true; }
-            else if(IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
-            else if(IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
-            else if(IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
- 
-            wstring in = GetTextFromEditField(hEdit);
-            string tmp;
-            wstring out;
-
-            if (id == CID_ENCODE && code == BN_CLICKED)
-            {
-               if (b1)
-               {
-                   tmp = m.morse_encode(WStringToString(in));
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-               }
-               else if (b2)
-               {
-                   tmp = m.morse_binary(WStringToString(in));
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-               }
-               else if (b3)
-               {
-                   tmp = m.bin_morse_hexdecimal(WStringToString(in), 0);
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-               }
-               else if (b4)
-               {
-                   tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-               }
-               else if (b5)
-               {
-                   tmp = m.morse_encode(WStringToString(in));
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-
-                   int si = ParseIntFromEdit(hSps, samples_per_second);
-                   double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
-                   int wi = ParseIntFromEdit(hWpm, words_per_minute);
-                   MakeMorseSafe(ti, wi, si);
-                   wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
-                   wstring wpmin = StringToWString(to_string(wi));
-                   wstring spsin = StringToWString(to_string(si));
-
-                   // show a short "generating" message
-                   wstring generating = L"Generating WAV file, please wait...";
-                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
-
-                   // disable encode/decode while background work runs
-                   EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
-                   EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
-
-                   // allocate thread params
-                   WavThreadParams* p = new WavThreadParams();
-                   p->morse = tmp; // tmp is the morse string already computed
-                   p->tone = stod(WStringToString(tonein));
-                   p->wpm = stod(WStringToString(wpmin));
-                   p->sps = stod(WStringToString(spsin));
-                   p->channels = STEREO;
-                   p->hwnd = hWnd;
-
-                   // start thread (CRT-friendly)
-                   uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
-                   if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
-
-				   // Do not call PlayMedia() here - file is not yet created/opened.
-               }
-               else if (b6)
-               {
-                   tmp = m.morse_encode(WStringToString(in));
-                   out = StringToWString(tmp);
-                   SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-
-                   int si = ParseIntFromEdit(hSps, samples_per_second);
-                   double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
-                   int wi = ParseIntFromEdit(hWpm, words_per_minute);
-                   MakeMorseSafe(ti, wi, si);
-                   wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
-                   wstring wpmin = StringToWString(to_string(wi));
-                   wstring spsin = StringToWString(to_string(si));
-
-                   // show a short "generating" message
-                   wstring generating = L"Generating WAV file, please wait...";
-                   SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
-
-                   // disable encode/decode while background work runs
-                   EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
-                   EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
-
-                   // allocate thread params
-                   WavThreadParams* p = new WavThreadParams();
-                   p->morse = tmp; // tmp is the morse string already computed
-                   p->tone = stod(WStringToString(tonein));
-                   p->wpm = stod(WStringToString(wpmin));
-                   p->sps = stod(WStringToString(spsin));
-                   p->channels = MONO;
-                   p->hwnd = hWnd;
-
-                   // start thread (CRT-friendly)
-                   uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
-                   if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
-
-                   // Do not call PlayMedia() here - file is not yet created/opened.
-               }
-               return 0;
-            }
-            else if (id == CID_DECODE && code == BN_CLICKED)
-            {
-                if (b1)
-                {
-                    tmp = m.morse_decode(WStringToString(in));
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                else if (b2)
-                {
-                    tmp = m.morse_decode(WStringToString(in));
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                else if (b3)
-                {
-                    tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                else if (b4)
-                {
-                    tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                if (b5)
-                {
-                    tmp = m.morse_decode(WStringToString(in));
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                if (b6)
-                {
-                    tmp = m.morse_decode(WStringToString(in));
-                    out = StringToWString(tmp);
-                    SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
-                }
-                return 0;
-            }
-            else if (id == IDM_FILE_OPEN && code == BN_CLICKED)
-            {
-                // allow opening the last generated file (FullPath)
-                if (!FullPath.empty())
-                {
-                    // build wchar path
-                    wstring wFullPath = StringToWString(FullPath);
-                }
-            }
-            break;
-        }
-        case WM_MWAV_DONE:
-        {
-            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
-            WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
-            if (res)
-            {
-                // Compose same output the UI used to display
-                wstring spsin = StringToWString(to_string(res->sps));
-                wstring tonein = StringToWString(trimDecimals(to_string(res->tone), 3));
-                wstring wpmin = StringToWString(to_string(res->wpm));
-                wstring wout = res->fullPath + L" (" + StringToWString(trimDecimals(to_string(res->waveSize / 1024.0), 2)) + L" kB)\r\n\r\n";
-                wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
-                wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
-                wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
-                wout += StringToWString(to_string(res->pcmCount * res->channels)) + L" PCM samples in ";
-                wout += StringToWString(trimDecimals(to_string(res->pcmCount / stod(spsin)), 2)) + L" s\r\n";
-
-                SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
-                SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
-                SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
-                SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
-
-                // Re-enable buttons that were disabled while creating the wav
-                EnableWindow(GetDlgItem(hWnd, CID_ENCODE), TRUE);
-                EnableWindow(GetDlgItem(hWnd, CID_DECODE), TRUE);
-
-                // Try to open the generated file and play if requested
-                if (!res->fullPath.empty())
-                {
-                    MCIERROR err = OpenMediaFileAndPlay(res->fullPath, hWnd);
-                    if (err)
-                    {
-                        // Show friendly message but keep UI responsive
-                        ShowMciError(err, hWnd, _T("Failed to open generated WAV"));
-                    }
-                }
-
-                delete res;
-            }
-            return 0;
-        }
-        case WM_DRAWITEM:
-        {
-            LPDRAWITEMSTRUCT p = (LPDRAWITEMSTRUCT)lParam;
-            HDC dc = p->hDC;
-            RECT r = p->rcItem;
-            // background
-            HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
-            FillRect(dc, &r, bg);
-            DeleteObject(bg);
-
-            // pressed effect
-            if (p->itemState & ODS_SELECTED) 
-            {
-                DrawEdge(dc, &r, EDGE_SUNKEN, BF_RECT);
-            }
-            else 
-            {
-                DrawEdge(dc, &r, EDGE_RAISED, BF_RECT);
-            }
-
-            // center coords
-            int cx = (r.left + r.right) / 2;
-            int cy = (r.top + r.bottom) / 2;
-
-            // choose shape by control id
-            switch (p->CtlID) {
-            case CID_PLAY: // Play (triangle)
-            {
-                POINT pts[3] = {
-                    {cx - 4, cy - 6},
-                    {cx - 4, cy + 6},
-                    {cx + 6, cy}
-                };
-                HPEN oldPen = (HPEN)SelectObject(dc, GetStockObject(NULL_PEN));
-                HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
-                HBRUSH old = (HBRUSH)SelectObject(dc, b);
-                Polygon(dc, pts, 3);
-                SelectObject(dc, old);
-                DeleteObject(b);
-                SelectObject(dc, oldPen);
-
-                break;
-            }
-            case CID_PAUSE: // Pause (two bars)
-            {
-                LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT)lParam;
-                // choose color based on state
-                bool disabled = (dis->itemState & ODS_DISABLED) != 0;
-                COLORREF col = disabled ? GetSysColor(COLOR_GRAYTEXT) : RGB(0, 0, 0);
-                HBRUSH b = CreateSolidBrush(col);
-                RECT bar = { cx - 5, cy - 6, cx - 2, cy + 6 };
-                FillRect(dc, &bar, b);
-                bar = { cx + 2, cy - 6, cx + 5, cy + 6 };
-                FillRect(dc, &bar, b);
-                DeleteObject(b);
-                break;
-            }
-            case CID_STOP: // Stop (square)
-            {
-                HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
-                RECT sq = { cx - 5, cy - 5, cx + 5, cy + 5 };
-                FillRect(dc, &sq, b);
-                DeleteObject(b);
-                break;
-            }
-            }
-            return TRUE;
-        }
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(g_hWnd, &ps);
-
-            // Fill background with custom color
-            HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
-            FillRect(hdc, &ps.rcPaint, bg);
-            DeleteObject(bg);
-
-            EndPaint(g_hWnd, &ps);
-            return 0;
-        }
-        case WM_DESTROY:
-        {
-            // Ensure MCI file closed on exit
-            ClosePlayer();
-            PostQuitMessage(0);
-            return 0;
-        }
-        default:
-            return DefWindowProcW(hWnd, msg, wParam, lParam);
-    }
-    return 0;
-}
-
 // ---------------- MorseWInt MCI Functions ----------------
 
 /**
-* Initialize hidden window for MCI playback
+* Initialize hidden child window to get a 
+* HWND for MCI notifications 
 *
 * @param hWndParent
 * @return BOOL
@@ -1028,16 +555,8 @@ static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hWndParent)
         return err;
     }
 
-    // Optionally attach a window for video drivers (audio-only drivers ignore this)
-    if (g_hWndPlayer)
-    {
-        // Format may require 64-bit integer for handle
-        wchar_t putCmd[128];
-        // Use %llu to be safe with 64-bit cast
-        swprintf_s(putCmd, _countof(putCmd), L"put MediaFile window handle %llu", (unsigned long long)(UINT_PTR)g_hWndPlayer);
-        // ignore error; not fatal
-        mciSendStringW(putCmd, NULL, 0, NULL);
-    }
+    // set up slider range
+    SetTracker(g_hTrack);
 
     // Save path into g_szMediaFile (TCHAR buffer). Project is UNICODE -> TCHAR == wchar_t.
     _tcsncpy_s(g_szMediaFile, path.c_str(), _TRUNCATE);
@@ -1053,6 +572,8 @@ static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hWndParent)
         return playErr;
     }
 
+    // start slider timer
+    SetTimer(hWndParent, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
     return 0;
 }
 
@@ -1099,6 +620,9 @@ void PlayMedia(HWND hwndNotify = NULL)
     // pass hwndNotify if you want MM_MCINOTIFY messages
     rc = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
     if (rc) { wstring err; GetMciError(rc, err); }
+
+    // ensure timer running
+    SetTimer(hwndNotify, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
 }
 
 /**
@@ -1128,12 +652,16 @@ void ResumeMedia()
     {
         MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, NULL);
         if (rc) { wstring err; GetMciError(rc, err); }
+
+        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
     }
     else if (mode == L"stopped") 
     {
         // resume won't work; start playing from current position or start
         MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
         if (rc) { wstring err; GetMciError(rc, err); }
+
+        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
     }
     else { /* already playing or unknown state */ }
 }
@@ -1147,6 +675,11 @@ void StopMedia()
     if (rc) { wstring err; GetMciError(rc, err); }
     rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
     if (rc) { wstring err; GetMciError(rc, err); }
+
+    KillTimer(g_hWndPlayer, IDM_SLIDER_UPDATE);
+    // update slider to 0
+    HWND hTrack = GetDlgItem(g_hWndPlayer, CID_TRACK);
+    SendMessage(hTrack, TBM_SETPOS, TRUE, 0);
 }
 
 /**
@@ -1189,6 +722,53 @@ void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix)
 }
 
 /**
+* Query length of media file in milliseconds
+* 
+* @param lengthMs
+* @return bool
+*/
+static bool QueryLength(UINT& lengthMs) 
+{
+    wchar_t buf[64] = {};
+    MCIERROR rc = mciSendStringW(L"status MediaFile length", buf, (UINT)std::size(buf), NULL);
+    if (rc) return false;
+    lengthMs = _wtoi(buf);
+    return true;
+}
+
+/**
+* Query current position in media file in milliseconds
+* 
+* @param posMs
+* @return bool
+*/
+static bool QueryPosition(UINT& posMs) 
+{
+    wchar_t buf[64] = {};
+    MCIERROR rc = mciSendStringW(L"status MediaFile position", buf, (UINT)std::size(buf), NULL);
+    if (rc) return false;
+    posMs = _wtoi(buf);
+    return true;
+}
+
+/**
+* Initialize trackbar range based on media file length
+* 
+* @param hTrackbar
+*/
+void SetTracker(HWND hTrackbar) // TODO: finish and make smooth, call this after opening media file, and after receiving MM_MCINOTIFY for position updates
+{
+    UINT lengthMs = 0;
+    if (!QueryLength(lengthMs)) return;
+    // set trackbar range to milliseconds (or scaled units)
+    SendMessage(hTrackbar, TBM_SETRANGE, TRUE, MAKELONG(0, (int)lengthMs));
+    SendMessage(hTrackbar, TBM_SETPAGESIZE, 0, 1000); // page = 1s
+    SendMessage(hTrackbar, TBM_SETPOS, TRUE, 0);
+}
+
+// ---------------- MorseWInt Procedures ----------------
+
+/**
 * Show MorseWInt application window
 * 
 * @param hwnd
@@ -1209,7 +789,7 @@ static int ShowMorseApp(HWND &hwnd)
         L"MorseWInt 01111 010101 11111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        700, 470,//460
+        700, 490,//460
         nullptr, nullptr, g_hInst, nullptr
     );
     //HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
@@ -1225,6 +805,550 @@ static int ShowMorseApp(HWND &hwnd)
     }
     return 0;
 }
+
+/**
+* Wav thread procedure
+*
+* @param pv
+*/
+static unsigned __stdcall WavThreadProc(void* pv)
+{
+    WavThreadParams* p = static_cast<WavThreadParams*>(pv);
+    if (!p) return 0;
+    HWND hwnd = p->hwnd;
+    // Prepare result allocated for the UI thread to delete
+    WavThreadResult* res = new WavThreadResult();
+    try
+    {
+        // Heavy work on background thread
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, false, false);
+
+        res->fullPath = StringToWString(mw.GetFullPath());
+        FullPath = mw.GetFullPath();
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
+        res->waveSize = mw.GetWaveSize();
+        res->pcmCount = mw.GetPcmCount();
+        res->channels = p->channels;
+    }
+    catch (const exception& e)
+    {
+        res->fullPath = StringToWString(string("ERROR: ") + e.what());
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
+        res->waveSize = 0;
+        res->pcmCount = 0;
+        res->channels = p->channels;
+    }
+    catch (...)
+    {
+        res->fullPath = StringToWString(string("ERROR: unknown exception"));
+        res->tone = p->tone;
+        res->wpm = static_cast<int>(p->wpm);
+        res->sps = static_cast<int>(p->sps);
+        res->waveSize = 0;
+        res->pcmCount = 0;
+        res->channels = p->channels;
+    }
+    PostMessageW(hwnd, WM_MWAV_DONE, reinterpret_cast<WPARAM>(res), 0);
+    delete p;
+    return 0;
+}
+
+/**
+* Console Wav thread procedure
+*
+* @param pv
+*/
+static unsigned __stdcall ConsoleWavThreadProc(void* pv)
+{
+    ConsoleWavParams* p = static_cast<ConsoleWavParams*>(pv);
+    if (!p) return 0;
+    try
+    {
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->openExternal, p->showExternal);
+    }
+    catch (const exception& e)
+    {
+        cerr << "ERROR creating WAV: " << e.what() << endl;
+    }
+    catch (...)
+    {
+        cerr << "ERROR creating WAV: unknown exception" << endl;
+    }
+    delete p;
+    return 0;
+}
+
+/**
+* Subclass procedure for edit controls: handle Ctrl+A -> select all
+*
+* @param hwnd
+* @param uMsg
+* @param wParam
+* @param lParam
+* @param uIdSubclass
+* @param dwRefData
+* @return LRESULT
+*/
+static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
+    UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+    if (uMsg == WM_KEYDOWN)
+    {
+        // check Ctrl + A (handle both 'A' and 'a')
+        if ((wParam == 'A' || wParam == 'a') && (GetKeyState(VK_CONTROL) & 0x8000))
+        {
+            SendMessageW(hwnd, EM_SETSEL, 0, -1); // select all text
+            return 0; // consumed
+        }
+    }
+    return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+}
+
+/**
+* Window Procedure for MorseWInt
+*
+* @param hWnd
+* @param msg
+* @param wParam
+* @param lParam
+*
+* @return LRESULT
+*/
+static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+    case WM_CREATE:
+    {
+        if (!InitWavPlayerWindow(hWnd))
+        {
+            MessageBox(hWnd, _T("Failed to create player window."), _T("Error"), MB_ICONERROR);
+            PostQuitMessage(1);
+        }
+        CreateMorseControls(hWnd);
+        wstring out = L"See command line for help:\r\n morse.exe -h or -help";
+        SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)out.c_str());
+
+        return 0;
+    }
+    case WM_COMMAND:
+    {
+        int id = LOWORD(wParam);
+        int code = HIWORD(wParam);
+        HWND hCtrl = (HWND)lParam;
+
+        // Handle media player button clicks and edit changes
+        if (id == CID_PLAY && code == BN_CLICKED)
+        {
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
+            wstring mode;
+            if (QueryMode(mode) && mode == L"paused")
+            {
+                ResumeMedia();
+            }
+            else
+            {
+                PlayMedia(hWnd);
+            }
+            return 0;
+        }
+        if (id == CID_PAUSE && code == BN_CLICKED)
+        {
+            PauseMedia();
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
+            return 0;
+        }
+        if (id == CID_STOP && code == BN_CLICKED)
+        {
+            StopMedia();
+            return 0;
+        }
+
+        if (id == CID_EDIT && code == EN_CHANGE)
+        {
+            int len = GetWindowTextLengthW(hEdit); // number of characters
+            int left = MAX_TXT_INPUT - len;
+            wstring out = StringToWString(to_string(left));
+            SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            if (len == 0)
+            {
+                SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
+                SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255)); // bar color
+            }
+            if (len > 0 && len < MAX_TXT_INPUT)
+            {
+                int percent = (len * 100) / MAX_TXT_INPUT;
+                if (percent > 100) percent = 100;
+                SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
+                if (percent < 90)
+                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
+                if (percent >= 95)
+                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
+                if (percent >= 99)
+                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
+            }
+        }
+
+        bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
+        if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_HEX) == BST_CHECKED) { b3 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
+
+        wstring in = GetTextFromEditField(hEdit);
+        string tmp;
+        wstring out;
+
+        if (id == CID_ENCODE && code == BN_CLICKED)
+        {
+            if (b1)
+            {
+                tmp = m.morse_encode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b2)
+            {
+                tmp = m.morse_binary(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b3)
+            {
+                tmp = m.bin_morse_hexdecimal(WStringToString(in), 0);
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b4)
+            {
+                tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b5)
+            {
+                tmp = m.morse_encode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+
+                int si = ParseIntFromEdit(hSps, samples_per_second);
+                double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
+                int wi = ParseIntFromEdit(hWpm, words_per_minute);
+                MakeMorseSafe(ti, wi, si);
+                wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
+                wstring wpmin = StringToWString(to_string(wi));
+                wstring spsin = StringToWString(to_string(si));
+
+                // show a short "generating" message
+                wstring generating = L"Generating WAV file, please wait...";
+                SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
+
+                // disable encode/decode while background work runs
+                EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
+                EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
+
+                // allocate thread params
+                WavThreadParams* p = new WavThreadParams();
+                p->morse = tmp; // tmp is the morse string already computed
+                p->tone = stod(WStringToString(tonein));
+                p->wpm = stod(WStringToString(wpmin));
+                p->sps = stod(WStringToString(spsin));
+                p->channels = STEREO;
+                p->hwnd = hWnd;
+
+                // start thread (CRT-friendly)
+                uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
+                if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
+
+                // Do not call PlayMedia() here - file is not yet created/opened.
+            }
+            else if (b6)
+            {
+                tmp = m.morse_encode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+
+                int si = ParseIntFromEdit(hSps, samples_per_second);
+                double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
+                int wi = ParseIntFromEdit(hWpm, words_per_minute);
+                MakeMorseSafe(ti, wi, si);
+                wstring  tonein = StringToWString(trimDecimals(to_string(ti), 3));
+                wstring wpmin = StringToWString(to_string(wi));
+                wstring spsin = StringToWString(to_string(si));
+
+                // show a short "generating" message
+                wstring generating = L"Generating WAV file, please wait...";
+                SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)generating.c_str());
+
+                // disable encode/decode while background work runs
+                EnableWindow(GetDlgItem(hWnd, CID_ENCODE), FALSE);
+                EnableWindow(GetDlgItem(hWnd, CID_DECODE), FALSE);
+
+                // allocate thread params
+                WavThreadParams* p = new WavThreadParams();
+                p->morse = tmp; // tmp is the morse string already computed
+                p->tone = stod(WStringToString(tonein));
+                p->wpm = stod(WStringToString(wpmin));
+                p->sps = stod(WStringToString(spsin));
+                p->channels = MONO;
+                p->hwnd = hWnd;
+
+                // start thread (CRT-friendly)
+                uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
+                if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
+
+                // Do not call PlayMedia() here - file is not yet created/opened.
+            }
+            return 0;
+        }
+        else if (id == CID_DECODE && code == BN_CLICKED)
+        {
+            if (b1)
+            {
+                tmp = m.morse_decode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b2)
+            {
+                tmp = m.morse_decode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b3)
+            {
+                tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            else if (b4)
+            {
+                tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            if (b5)
+            {
+                tmp = m.morse_decode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            if (b6)
+            {
+                tmp = m.morse_decode(WStringToString(in));
+                out = StringToWString(tmp);
+                SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+            }
+            return 0;
+        }
+        else if (id == IDM_FILE_OPEN && code == BN_CLICKED)
+        {
+            // allow opening the last generated file (FullPath)
+            if (!FullPath.empty())
+            {
+                // build wchar path
+                wstring wFullPath = StringToWString(FullPath);
+            }
+        }
+        break;
+    }
+    case WM_MWAV_DONE:
+    {
+        EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
+        WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
+        if (res)
+        {
+            // Compose same output the UI used to display
+            wstring spsin = StringToWString(to_string(res->sps));
+            wstring tonein = StringToWString(trimDecimals(to_string(res->tone), 3));
+            wstring wpmin = StringToWString(to_string(res->wpm));
+            wstring wout = res->fullPath + L" (" + StringToWString(trimDecimals(to_string(res->waveSize / 1024.0), 2)) + L" kB)\r\n\r\n";
+            wout += L"wave: " + spsin + L" Hz (-sps:" + spsin + L")\r\n";
+            wout += L"tone: " + tonein + L" Hz (-hz:" + tonein + L")\r\n";
+            wout += L"code: " + wpmin + L" Hz (-wpm:" + wpmin + L")\r\n";
+            wout += StringToWString(to_string(res->pcmCount * res->channels)) + L" PCM samples in ";
+            wout += StringToWString(trimDecimals(to_string(res->pcmCount / stod(spsin)), 2)) + L" s\r\n";
+
+            SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)wout.c_str());
+            SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)tonein.c_str());
+            SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)wpmin.c_str());
+            SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)spsin.c_str());
+
+            // Re-enable buttons that were disabled while creating the wav
+            EnableWindow(GetDlgItem(hWnd, CID_ENCODE), TRUE);
+            EnableWindow(GetDlgItem(hWnd, CID_DECODE), TRUE);
+
+            // Try to open the generated file and play if requested
+            if (!res->fullPath.empty())
+            {
+                MCIERROR err = OpenMediaFileAndPlay(res->fullPath, hWnd);
+                if (err)
+                {
+                    // Show friendly message but keep UI responsive
+                    ShowMciError(err, hWnd, _T("Failed to open generated WAV"));
+                }
+            }
+
+            delete res;
+        }
+        return 0;
+    }
+    case WM_DRAWITEM:
+    {
+        LPDRAWITEMSTRUCT p = (LPDRAWITEMSTRUCT)lParam;
+        HDC dc = p->hDC;
+        RECT r = p->rcItem;
+        // background
+        HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
+        FillRect(dc, &r, bg);
+        DeleteObject(bg);
+
+        // pressed effect
+        if (p->itemState & ODS_SELECTED)
+        {
+            DrawEdge(dc, &r, EDGE_SUNKEN, BF_RECT);
+        }
+        else
+        {
+            DrawEdge(dc, &r, EDGE_RAISED, BF_RECT);
+        }
+
+        // center coords
+        int cx = (r.left + r.right) / 2;
+        int cy = (r.top + r.bottom) / 2;
+
+        // choose shape by control id
+        switch (p->CtlID) {
+        case CID_PLAY: // Play (triangle)
+        {
+            POINT pts[3] = {
+                {cx - 4, cy - 6},
+                {cx - 4, cy + 6},
+                {cx + 6, cy}
+            };
+            HPEN oldPen = (HPEN)SelectObject(dc, GetStockObject(BLACK_PEN));
+            HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
+            HBRUSH old = (HBRUSH)SelectObject(dc, b);
+            Polygon(dc, pts, 3);
+            SelectObject(dc, old);
+            DeleteObject(b);
+            SelectObject(dc, oldPen);
+
+            break;
+        }
+        case CID_PAUSE: // Pause (two bars)
+        {
+            LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT)lParam;
+            // choose color based on state
+            bool disabled = (dis->itemState & ODS_DISABLED) != 0;
+            COLORREF col = disabled ? GetSysColor(COLOR_GRAYTEXT) : RGB(0, 0, 0);
+            HBRUSH b = CreateSolidBrush(col);
+            RECT bar = { cx - 5, cy - 6, cx - 2, cy + 6 };
+            FillRect(dc, &bar, b);
+            bar = { cx + 2, cy - 6, cx + 5, cy + 6 };
+            FillRect(dc, &bar, b);
+            DeleteObject(b);
+            break;
+        }
+        case CID_STOP: // Stop (square)
+        {
+            HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
+            RECT sq = { cx - 5, cy - 5, cx + 5, cy + 5 };
+            FillRect(dc, &sq, b);
+            DeleteObject(b);
+            break;
+        }
+        }
+        return TRUE;
+    }
+    case WM_TIMER:
+        if (wParam == IDM_SLIDER_UPDATE)
+        {
+            UINT pos = 0;
+            if (QueryPosition(pos))
+            {
+                SendMessage(g_hTrack, TBM_SETPOS, TRUE, (LPARAM)pos);
+            }
+            else { /* optional: stop timer if query fails */ }
+        }
+        break;
+    case MM_MCINOTIFY:
+        if (wParam == MCI_NOTIFY_SUCCESSFUL) 
+        {
+            // playback finished
+            KillTimer(hWnd, IDM_SLIDER_UPDATE);
+            if (g_hTrack) SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
+        }
+        break;
+    case WM_HSCROLL:
+    {
+        HWND hTrack = GetDlgItem(hWnd, CID_TRACK);
+        int code = (int)LOWORD(wParam);
+        int pos = (int)SendMessage(hTrack, TBM_GETPOS, 0, 0);
+
+        if (code == TB_THUMBTRACK)
+        {
+            // while dragging: optionally show preview time but don't seek continuously
+            // SendMessage(hTrack, TBM_SETPOS, TRUE, pos); // already handled by control
+        }
+        else if (code == TB_THUMBPOSITION || code == TB_ENDTRACK)
+        {
+            // user finished seeking: seek MCI to pos (ms)
+            wchar_t cmd[128];
+            swprintf_s(cmd, L"seek MediaFile to %d", pos);
+            MCIERROR rc = mciSendStringW(cmd, NULL, 0, NULL);
+            if (rc)
+            {
+                std::wstring err; GetMciError(rc, err);
+                // log or show error
+            }
+            else
+            {
+                // if currently playing, resume play from new position
+                std::wstring mode;
+                if (QueryMode(mode) && mode == L"playing")
+                {
+                    // restart play from current position (some drivers auto continue)
+                    mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
+                }
+            }
+        }
+    }
+    break;
+
+
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(g_hWnd, &ps);
+
+        // Fill background with custom color
+        HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
+        FillRect(hdc, &ps.rcPaint, bg);
+        DeleteObject(bg);
+
+        EndPaint(g_hWnd, &ps);
+        return 0;
+    }
+    case WM_DESTROY:
+    {
+        // Ensure MCI file closed on exit
+        ClosePlayer();
+        PostQuitMessage(0);
+        return 0;
+    }
+    default:
+        return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
 /**
 * Windows application entry point
 * 
@@ -1236,10 +1360,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 	g_hInst = hInstance;
 
 	CheckRadioButton(g_hWnd, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
-
-    // initialize progress bar
-    INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_PROGRESS_CLASS };
-    InitCommonControlsEx(&icc);
 	
     // Process command line arguments
     int argc = 0;
