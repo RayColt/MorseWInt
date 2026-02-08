@@ -752,7 +752,7 @@ static bool QueryPosition(UINT& posMs)
 }
 
 /**
-* Initialize trackbar range based on media file length
+* Set or init trackbar range based on media file length
 * 
 * @param hTrackbar
 */

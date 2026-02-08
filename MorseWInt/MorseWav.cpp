@@ -222,7 +222,7 @@ void MorseWav::WriteWav(const vector<int16_t> &pcmdata)
     int fmt_size = 16;
     FILE* file = NULL;
 
-    WAVEFORMATEX wfx = { 0 }; // mmeapi.h defines a WAVEFORMAT, but we need WAVEFORMATEX with cbSize
+	WAVEFORMATEX wfx = { 0 }; // mmeapi.h
     wfx.wFormatTag = WAVE_FORMAT_PCM;
     wfx.nChannels = NumChannels; // 1 or 2 ~ mono or stereo
     wfx.wBitsPerSample = 16; // 8 or 16
