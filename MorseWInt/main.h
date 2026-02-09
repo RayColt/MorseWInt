@@ -121,7 +121,6 @@ double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
 void ClosePlayer();
 void PlayMedia();
 void PauseMedia();
-void ResumeMedia();
 void StopMedia();
 static bool QueryMode(std::wstring& mode);
 static bool QueryLength(UINT& lengthMs);

@@ -365,7 +365,7 @@ void PlayMedia()
             MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
-        else if (mode == L"stopped") 
+		else if (mode == L"stopped") // TODO: play from current pos if stopped???
         {
             // ensure we start from beginning (seek done above if needed)
             MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
@@ -509,7 +509,7 @@ static bool QueryPosition(UINT& posMs)
 * 
 * @param hTrackbar
 */
-void SetTracker(HWND hTrackbar) // TODO: finish and make smooth, call this after opening media file, and after receiving MM_MCINOTIFY for position updates
+void SetTracker(HWND hTrackbar)
 {
     UINT lengthMs = 0;
     if (!QueryLength(lengthMs)) return;
