@@ -8,33 +8,6 @@
 */
 #include "main.h"
 
-// config options
-bool NEW_CONSOLE = false; // open a new console for output, false for recommended cmd.exe, true for powershell - buggy
-const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with external media player or not - CONSOLE MODUS ONLY
-const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external media player or not - CONSOLE MODUS ONLY
-
-// global variables
-HWND g_hMain = NULL; // global window handle
-HWND g_hWndPlayer = NULL; // global media player window handle
-static HINSTANCE g_hInst = GetModuleHandle(nullptr); // global instance handle 
-Morse m; // global morse settings
-string action = ""; // global action setting
-TCHAR g_szMediaFile[MAX_PATH] = { 0 };
-bool g_mediaOpen = false;
-
-// input limits
-const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
-const int MAX_MORSE_INPUT = 3000; // max chars for morse encoding/decoding
-const int MAX_SOUND_INPUT = 2999; // max chars for sound generation
-const int MONO = 1;
-const int STEREO = 2;
-
-// default morse settings
-const string error_in = "INPUT-ERROR";
-double frequency_in_hertz = 880.0;
-int words_per_minute = 33;
-int samples_per_second = 44100;
-
 // ---------------- MorseWInt Helper Functions ----------------
 
 /**
@@ -252,238 +225,6 @@ string trimDecimals(const string& s, int decimals)
     return s.substr(0, end);
 }
 
-// ---------------- MorseWInt GUI ----------------
-
-enum 
-{
-	CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104, 
-	CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109, CID_HELP = 110,
-	CID_TONE = 111, CID_WPM = 112, CID_SPS = 113, CID_PROG = 114, CID_PLAY = 115, CID_PAUSE = 116, CID_STOP = 117,
-	CID_TRACK = 118
-};
-
-// Global handles to child controls
-HWND hEdit = NULL;
-HWND hWavOut = NULL;
-HWND hTone = NULL;
-HWND hWpm = NULL;
-HWND hSps = NULL;
-HWND hProg = NULL;
-HWND hCountLabel = NULL;
-HWND hPlay = NULL;
-HWND hPause = NULL;
-HWND hStop = NULL;
-HWND g_hTrack;
-
-// Create child controls on given window
-static void CreateMorseControls(HWND hWnd)
-{
-	// radiobutton x position
-    int radiobuttonX = 425;
-    int radiobuttonY = 30;
-    int wavinY = 185;
-
-    // Create ms font
-    HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-    HFONT hFontMorse = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
-    HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-	HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
-    
-     // Create labels
-    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE / TXT:", 
-        WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18, 
-        hWnd, NULL, g_hInst, NULL);
-
-    hCountLabel = CreateWindowExW(0, L"STATIC", StringToWString(to_string(MAX_TXT_INPUT)).c_str(),
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX - 190, radiobuttonY - 10, 25, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY - 20, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    HWND hWavInLabel = CreateWindowExW(0, L"STATIC", L"WAV INPUT:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-    
-    HWND hToneLabel = CreateWindowExW(0, L"STATIC", L"Tone",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 20, wavinY + 20, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    HWND hWpmLabel = CreateWindowExW(0, L"STATIC", L"Wpm:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 75, wavinY + 20, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    HWND hSpsLabel = CreateWindowExW(0, L"STATIC", L"Sps:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 145, wavinY + 20, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    HWND hWavOutLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 255, 120, 18,
-        hWnd, NULL, g_hInst, NULL);
-
-    // Create edit box
-    hEdit = CreateWindowExW(
-        WS_EX_CLIENTEDGE,
-        L"EDIT",
-        L"",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP |
-        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
-        15, 40, 400, 300,
-        hWnd, (HMENU)(INT_PTR)CID_EDIT, g_hInst, NULL);
-    // subclass to handle Ctrl+A
-    SetWindowSubclass(hEdit, Edit_SelectAll_SubclassProc, 1, 0);
-
-    // Create wav output edit box
-    hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT", 
-        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
-        radiobuttonX, 275, 240, 120,
-        hWnd, (HMENU)(INT_PTR)CID_WAVOUT, g_hInst, NULL);
-    // subclass to handle Ctrl+A
-    SetWindowSubclass(hWavOut, Edit_SelectAll_SubclassProc, 1, 0);
-
-    // Create Tone edit box
-    hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
-        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX, wavinY + 40, 70, 18,
-        hWnd, (HMENU)(INT_PTR)CID_TONE, g_hInst, NULL);
-
-    // Create Wpm edit box
-    hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
-        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX + 75, wavinY + 40, 65, 18,
-        hWnd, (HMENU)(INT_PTR)CID_WPM, g_hInst, NULL);
-
-    // Create Sps edit box
-    hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
-        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
-        radiobuttonX + 145, wavinY + 40, 65, 18,
-        hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
-
-	// Create play, pause, stop buttons
-    hPlay = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 70, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
-
-    hPause = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 105, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
-
-    hStop = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 140, wavinY + 235, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
-
-	// Create radio buttons
-    HWND hMorse = CreateWindowExW(
-        WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
-        radiobuttonX, radiobuttonY, 165, 20,
-        hWnd, (HMENU)CID_MORSE, g_hInst, NULL
-    );
-
-    HWND hBinMorse = CreateWindowExW(
-        WS_EX_TRANSPARENT, L"BUTTON", L"BinMorse",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, radiobuttonY + 25, 165, 20,
-        hWnd, (HMENU)CID_BIN, g_hInst, NULL
-    );
-
-    HWND hHexMorse = CreateWindowExW(
-        0, L"BUTTON", L"HexMorse",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, radiobuttonY + 50, 165, 20,
-        hWnd, (HMENU)CID_HEX, g_hInst, NULL
-    );
-
-    HWND hHexBinMorse = CreateWindowExW(
-        0, L"BUTTON", L"HexBinMorse",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, radiobuttonY + 75, 165, 20,
-        hWnd, (HMENU)CID_HEXBIN, g_hInst, NULL
-    );
-
-    HWND hMorseToWavS = CreateWindowExW(
-        0, L"BUTTON", L"Morse to Wav(s)",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, radiobuttonY + 100, 165, 20,
-        hWnd, (HMENU)CID_M2WS, g_hInst, NULL
-    );
-
-    HWND hMorseToWavM = CreateWindowExW(
-        0, L"BUTTON", L"Morse to Wav(m)",
-        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-        radiobuttonX, radiobuttonY + 125, 165, 20,
-        hWnd, (HMENU)CID_M2WM, g_hInst, NULL
-    );
-
-	// set default radio button selection
-	SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
-
-    // create progress bar
-        hProg = CreateWindowExW(
-        0,
-        PROGRESS_CLASSW,
-        NULL,
-        WS_CHILD | WS_VISIBLE,
-        268, 15, 146, 18,
-        hWnd,
-        (HMENU)CID_PROG,
-        g_hInst,
-        NULL
-    );
-
-	// Initialize and create progress bar
-    INITCOMMONCONTROLSEX iccp = { sizeof(iccp), ICC_PROGRESS_CLASS };
-    InitCommonControlsEx(&iccp);
-    SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
-    SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
-	SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
-
-	// Initialize and create trackbar for MCI player
-    INITCOMMONCONTROLSEX iccb = { sizeof(iccb), ICC_BAR_CLASSES };
-    InitCommonControlsEx(&iccb);
-    g_hTrack = CreateWindowExW(0, TRACKBAR_CLASSW, NULL,
-        WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
-        radiobuttonX, radiobuttonY + 365, 240, 15, hWnd, (HMENU)CID_TRACK, NULL, NULL);
-    SendMessage(g_hTrack, TBM_SETRANGE, TRUE, MAKELONG(0, 1000));
-    SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
-
-	// Create buttons
-    HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
-    HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
-
-	// Set fonts
-    SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-	SendMessageW(hModesLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hWavOutLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hWavInLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hToneLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hWpmLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-	SendMessageW(hCountLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-    // Edit box
-    SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
-    SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-    // Buttons
-    SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-
-	// Radio buttons
-    SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
-	SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hHexMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
-    SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
-
-	// set default morse settings in edit boxes
-    wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
-    wstring ww = StringToWString(to_string(words_per_minute));
-    wstring ws = StringToWString(to_string(samples_per_second));
-    SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)wt.c_str());
-    SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)ww.c_str());
-    SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
-}
-
 // ---------------- MorseWInt MCI Functions ----------------
 
 /**
@@ -621,13 +362,13 @@ void PlayMedia()
     if (haveMode) {
         if (mode == L"paused") 
         {
-            MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hMain);
+            MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
         else if (mode == L"stopped") 
         {
             // ensure we start from beginning (seek done above if needed)
-            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
         else if (mode == L"playing") 
@@ -639,14 +380,14 @@ void PlayMedia()
         else 
         {
             // unknown mode: try play as fallback
-            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
     }
     else 
     {
         // status failed — alias might be closed; try to re-open or play anyway
-        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
         if (rc) 
         {
             wstring err; GetMciError(rc, err);
@@ -658,7 +399,7 @@ void PlayMedia()
                 if (openRc == 0) 
                 {
                     g_mediaOpen = true;
-                    mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+                    mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
                 }
                 else 
                 {
@@ -669,7 +410,7 @@ void PlayMedia()
     }
 
     // ensure slider timer runs
-    SetTimer(g_hMain, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
+    SetTimer(g_hWnd, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
 }
 
 /**
@@ -690,7 +431,7 @@ void StopMedia()
     if (!g_mediaOpen) return;
     mciSendStringW(L"stop MediaFile", NULL, 0, NULL);
 	//mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL); // hack: ensure position resets to 0, since some files may not reset on stop
-    KillTimer(g_hMain, IDM_SLIDER_UPDATE);
+    KillTimer(g_hWnd, IDM_SLIDER_UPDATE);
     if (g_hTrack) SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
 }
 
@@ -776,6 +517,217 @@ void SetTracker(HWND hTrackbar) // TODO: finish and make smooth, call this after
     SendMessage(hTrackbar, TBM_SETRANGE, TRUE, MAKELONG(0, (int)lengthMs));
     SendMessage(hTrackbar, TBM_SETPAGESIZE, 0, 1000); // page = 1s
     SendMessage(hTrackbar, TBM_SETPOS, TRUE, 0);
+}
+
+// ---------------- MorseWInt GUI ----------------
+
+// Create child controls on given window
+static void CreateMorseControls(HWND hWnd)
+{
+    // radiobutton x position
+    int radiobuttonX = 425;
+    int radiobuttonY = 30;
+    int wavinY = 185;
+
+    // Create ms font
+    HFONT hFont = CreateFontW(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    HFONT hFontMorse = CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Lucida Console");
+    HFONT hFontBold = CreateFontW(16, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+    HFONT hFontSmallBold = CreateFontW(12, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Segoe UI");
+
+    // Create labels
+    HWND hMorseLabel = CreateWindowExW(0, L"STATIC", L"MORSE / TXT:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    hCountLabel = CreateWindowExW(0, L"STATIC", StringToWString(to_string(MAX_TXT_INPUT)).c_str(),
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX - 190, radiobuttonY - 10, 25, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hModesLabel = CreateWindowExW(0, L"STATIC", L"MODES:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, radiobuttonY - 20, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hWavInLabel = CreateWindowExW(0, L"STATIC", L"WAV INPUT:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hToneLabel = CreateWindowExW(0, L"STATIC", L"Tone",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 20, wavinY + 20, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hWpmLabel = CreateWindowExW(0, L"STATIC", L"Wpm:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 75, wavinY + 20, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hSpsLabel = CreateWindowExW(0, L"STATIC", L"Sps:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 145, wavinY + 20, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    HWND hWavOutLabel = CreateWindowExW(0, L"STATIC", L"WAV OUTPUT:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, 255, 120, 18,
+        hWnd, NULL, g_hInst, NULL);
+
+    // Create edit box
+    hEdit = CreateWindowExW(
+        WS_EX_CLIENTEDGE,
+        L"EDIT",
+        L"",
+        WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+        ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL,
+        15, 40, 400, 300,
+        hWnd, (HMENU)(INT_PTR)CID_EDIT, g_hInst, NULL);
+    // subclass to handle Ctrl+A
+    SetWindowSubclass(hEdit, Edit_SelectAll_SubclassProc, 1, 0);
+
+    // Create wav output edit box
+    hWavOut = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT | ES_MULTILINE | ES_READONLY,
+        radiobuttonX, 275, 240, 120,
+        hWnd, (HMENU)(INT_PTR)CID_WAVOUT, g_hInst, NULL);
+    // subclass to handle Ctrl+A
+    SetWindowSubclass(hWavOut, Edit_SelectAll_SubclassProc, 1, 0);
+
+    // Create Tone edit box
+    hTone = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
+        radiobuttonX, wavinY + 40, 70, 18,
+        hWnd, (HMENU)(INT_PTR)CID_TONE, g_hInst, NULL);
+
+    // Create Wpm edit box
+    hWpm = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
+        radiobuttonX + 75, wavinY + 40, 65, 18,
+        hWnd, (HMENU)(INT_PTR)CID_WPM, g_hInst, NULL);
+
+    // Create Sps edit box
+    hSps = CreateWindowExW(WS_EX_CLIENTEDGE, L"EDIT",
+        NULL, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_LEFT,
+        radiobuttonX + 145, wavinY + 40, 65, 18,
+        hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
+
+    // Create play, pause, stop buttons
+    hPlay = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+        radiobuttonX + 70, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
+
+    hPause = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+        radiobuttonX + 105, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
+
+    hStop = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+        radiobuttonX + 140, wavinY + 235, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
+
+    // Create radio buttons
+    HWND hMorse = CreateWindowExW(
+        WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
+        radiobuttonX, radiobuttonY, 165, 20,
+        hWnd, (HMENU)CID_MORSE, g_hInst, NULL
+    );
+
+    HWND hBinMorse = CreateWindowExW(
+        WS_EX_TRANSPARENT, L"BUTTON", L"BinMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, radiobuttonY + 25, 165, 20,
+        hWnd, (HMENU)CID_BIN, g_hInst, NULL
+    );
+
+    HWND hHexMorse = CreateWindowExW(
+        0, L"BUTTON", L"HexMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, radiobuttonY + 50, 165, 20,
+        hWnd, (HMENU)CID_HEX, g_hInst, NULL
+    );
+
+    HWND hHexBinMorse = CreateWindowExW(
+        0, L"BUTTON", L"HexBinMorse",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, radiobuttonY + 75, 165, 20,
+        hWnd, (HMENU)CID_HEXBIN, g_hInst, NULL
+    );
+
+    HWND hMorseToWavS = CreateWindowExW(
+        0, L"BUTTON", L"Morse to Wav(s)",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, radiobuttonY + 100, 165, 20,
+        hWnd, (HMENU)CID_M2WS, g_hInst, NULL
+    );
+
+    HWND hMorseToWavM = CreateWindowExW(
+        0, L"BUTTON", L"Morse to Wav(m)",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        radiobuttonX, radiobuttonY + 125, 165, 20,
+        hWnd, (HMENU)CID_M2WM, g_hInst, NULL
+    );
+
+    // set default radio button selection
+    SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
+
+    // create progress bar
+    hProg = CreateWindowExW(
+        0,
+        PROGRESS_CLASSW,
+        NULL,
+        WS_CHILD | WS_VISIBLE,
+        268, 15, 146, 18,
+        hWnd,
+        (HMENU)CID_PROG,
+        g_hInst,
+        NULL
+    );
+
+    // Initialize and create progress bar
+    INITCOMMONCONTROLSEX iccp = { sizeof(iccp), ICC_PROGRESS_CLASS };
+    InitCommonControlsEx(&iccp);
+    SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
+    SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
+    SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
+
+    // Initialize and create trackbar for MCI player
+    INITCOMMONCONTROLSEX iccb = { sizeof(iccb), ICC_BAR_CLASSES };
+    InitCommonControlsEx(&iccb);
+    g_hTrack = CreateWindowExW(0, TRACKBAR_CLASSW, NULL,
+        WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
+        radiobuttonX, radiobuttonY + 365, 240, 15, hWnd, (HMENU)CID_TRACK, NULL, NULL);
+    SendMessage(g_hTrack, TBM_SETRANGE, TRUE, MAKELONG(0, 1000));
+    SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
+
+    // Create buttons
+    HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
+    HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
+
+    // Set fonts
+    SendMessageW(hMorseLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hModesLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hWavOutLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hWavInLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hToneLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hWpmLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hCountLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+    // Edit box
+    SendMessageW(hEdit, WM_SETFONT, (WPARAM)hFontMorse, TRUE);
+    SendMessageW(hWavOut, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+    // Buttons
+    SendMessageW(hEncodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+    SendMessageW(hDecodeButton, WM_SETFONT, (WPARAM)hFontBold, TRUE);
+
+    // Radio buttons
+    SendMessageW(hMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hHexMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
+
+    // set default morse settings in edit boxes
+    wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
+    wstring ww = StringToWString(to_string(words_per_minute));
+    wstring ws = StringToWString(to_string(samples_per_second));
+    SendMessageW(hTone, WM_SETTEXT, 0, (LPARAM)wt.c_str());
+    SendMessageW(hWpm, WM_SETTEXT, 0, (LPARAM)ww.c_str());
+    SendMessageW(hSps, WM_SETTEXT, 0, (LPARAM)ws.c_str());
 }
 
 // ---------------- MorseWInt Procedures ----------------
@@ -936,7 +888,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     {
     case WM_CREATE:
     {
-        g_hMain = hWnd;
+        g_hWnd = hWnd;
         if (!InitWavPlayerWindow(hWnd))
         {
             MessageBox(hWnd, _T("Failed to create player window."), _T("Error"), MB_ICONERROR);
@@ -1318,14 +1270,14 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(g_hMain, &ps);
+        HDC hdc = BeginPaint(g_hWnd, &ps);
 
         // Fill background with custom color
         HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
         FillRect(hdc, &ps.rcPaint, bg);
         DeleteObject(bg);
 
-        EndPaint(g_hMain, &ps);
+        EndPaint(g_hWnd, &ps);
         return 0;
     }
     case WM_DESTROY:
@@ -1351,7 +1303,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // store instance handle in global variable
 	g_hInst = hInstance;
 
-	CheckRadioButton(g_hMain, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
+	CheckRadioButton(g_hWnd, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
 	
     // Process command line arguments
     int argc = 0;
@@ -1527,7 +1479,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     else
     {
 		// GUI mode
-        ShowMorseApp(g_hMain);
+        ShowMorseApp(g_hWnd);
     }
 
     // when done, free all allocated buffers and arrays
