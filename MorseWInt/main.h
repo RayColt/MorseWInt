@@ -32,7 +32,6 @@
 #define IDM_SLIDER_UPDATE   1004
 #define SLIDER_TIMER_MS     200
 
-
 // GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
