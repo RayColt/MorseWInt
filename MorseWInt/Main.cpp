@@ -365,10 +365,10 @@ void PlayMedia()
             MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
-		else if (mode == L"stopped") // TODO: play from current pos if stopped???
+		else if (mode == L"stopped")
         {
             // ensure we start from beginning (seek done above if needed)
-            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
+            MCIERROR rc = mciSendStringW(L"play MediaFile from 0 notify", NULL, 0, g_hWnd);
             if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
         else if (mode == L"playing") 
