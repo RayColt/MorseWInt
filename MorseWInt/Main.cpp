@@ -457,7 +457,6 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hToneLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hWpmLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
     SendMessageW(hSpsLabel, WM_SETFONT, (WPARAM)hFontBold, TRUE);
-    //SendMessageW(hHelpLabel, WM_SETFONT, (WPARAM)hFontSmallBold, TRUE);
 	SendMessageW(hCountLabel, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     // Edit box
@@ -515,7 +514,7 @@ BOOL InitWavPlayerWindow(HWND hWndParent)
 * @param hWndParent
 * @return MCIERROR
 */
-static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hWndParent)
+static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hwndNotify)
 {
     // Close any previously open file first
     if (g_mediaOpen)
@@ -527,52 +526,43 @@ static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hWndParent)
     }
 
     MCIERROR err = 0;
-    // Try to open with explicit type "waveaudio" first.
-    {
-        wstring cmd;
-        cmd.reserve(256 + path.size());
-        cmd = L"open \"";
-        cmd += path;
-        cmd += L"\" type waveaudio alias MediaFile";
-        err = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
-    }
-
-    // If opening with type failed, try open without type
+    wstring cmd = L"open \"" + path + L"\" type waveaudio alias MediaFile";
+    err = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
     if (err)
     {
-        wstring cmd;
-        cmd.reserve(256 + path.size());
-        cmd = L"open \"";
-        cmd += path;
-        cmd += L"\" alias MediaFile";
+        // fallback without explicit type
+        cmd = L"open \"" + path + L"\" alias MediaFile";
         err = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
     }
+    if (err) return err;
 
-    if (err)
+    // attach notify window
+    if (hwndNotify) 
     {
-        // let caller show friendly error
-        return err;
+        wchar_t putCmd[128];
+        swprintf_s(putCmd, L"put MediaFile window handle %llu", (unsigned long long)(UINT_PTR)hwndNotify);
+        mciSendStringW(putCmd, NULL, 0, NULL);
     }
-
-    // set up slider range
-    SetTracker(g_hTrack);
 
     // Save path into g_szMediaFile (TCHAR buffer). Project is UNICODE -> TCHAR == wchar_t.
     _tcsncpy_s(g_szMediaFile, path.c_str(), _TRUNCATE);
     g_mediaOpen = true;
 
-    MCIERROR playErr = mciSendString(_T("play MediaFile notify"), NULL, 0, NULL);
-    if (playErr)
+    // set up slider
+    SetTracker(g_hTrack);
+
+    // play with notify
+    MCIERROR playErr = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
+    if (playErr) 
     {
-        // if playing fails, close and report error
-        mciSendString(_T("close MediaFile"), NULL, 0, NULL);
+        mciSendStringW(L"close MediaFile", NULL, 0, NULL);
         g_mediaOpen = false;
-        g_szMediaFile[0] = _T('\0');
+        g_szMediaFile[0] = L'\0';
         return playErr;
     }
 
-    // start slider timer
-    SetTimer(hWndParent, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
+    // start timer to update slider
+    SetTimer(hwndNotify, IDM_SLIDER_UPDATE, 200, NULL);
     return 0;
 }
 
@@ -722,7 +712,7 @@ void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix)
 static bool QueryLength(UINT& lengthMs) 
 {
     wchar_t buf[64] = {};
-    MCIERROR rc = mciSendStringW(L"status MediaFile length", buf, (UINT)std::size(buf), NULL);
+    MCIERROR rc = mciSendStringW(L"status MediaFile length", buf, (UINT)size(buf), NULL);
     if (rc) return false;
     lengthMs = _wtoi(buf);
     return true;
@@ -737,7 +727,7 @@ static bool QueryLength(UINT& lengthMs)
 static bool QueryPosition(UINT& posMs) 
 {
     wchar_t buf[64] = {};
-    MCIERROR rc = mciSendStringW(L"status MediaFile position", buf, (UINT)std::size(buf), NULL);
+    MCIERROR rc = mciSendStringW(L"status MediaFile position", buf, (UINT)size(buf), NULL);
     if (rc) return false;
     posMs = _wtoi(buf);
     return true;
@@ -1287,7 +1277,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             if (rc == 0)
             {
                 // if currently playing, resume play from new position
-                std::wstring mode;
+                wstring mode;
                 if (QueryMode(mode) && mode == L"playing")
                 {
                     // restart play from current position (some drivers auto continue)
@@ -1296,7 +1286,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             }
             else
             {
-                std::wstring err; GetMciError(rc, err);
+                wstring err; GetMciError(rc, err);
                 // log or show error
             }
         }
