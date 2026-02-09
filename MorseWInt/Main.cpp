@@ -598,58 +598,78 @@ static bool QueryMode(wstring& mode)
 /**
 * Play media file from current position or start if stopped.
 */
-void PlayMedia() 
+void PlayMedia()
 {
-    //mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL); TODO: bug: is set pause replay not working
-   if (!g_mediaOpen) return;
+    if (!g_mediaOpen) return;
+    // Query mode, position and length
     wstring mode;
-    if (QueryMode(mode)) 
+    UINT pos = 0, len = 0;
+    bool haveMode = QueryMode(mode);
+    QueryPosition(pos);   // ignore failure here, pos stays 0
+    QueryLength(len);     // ignore failure here, len stays 0
+
+    // If we are at or past the end, seek to start first
+    if (len > 0 && pos >= len) 
     {
+        MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
+        // after seek, set pos = 0 for logic below
+        pos = 0;
+    }
+
+    // Decide action based on mode
+    if (haveMode) {
         if (mode == L"paused") 
         {
-            mciSendStringW(L"resume MediaFile", NULL, 0, g_hMain);
+            MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hMain);
+            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
         else if (mode == L"stopped") 
         {
-            mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+            // ensure we start from beginning (seek done above if needed)
+            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
+        }
+        else if (mode == L"playing") 
+        {
+            // already playing — optionally restart from beginning
+            // mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+            // mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        }
+        else 
+        {
+            // unknown mode: try play as fallback
+            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
         }
     }
     else 
     {
-        mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        // status failed — alias might be closed; try to re-open or play anyway
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        if (rc) 
+        {
+            wstring err; GetMciError(rc, err);
+            // If play fails because alias closed, reopen file (use g_szMediaFile)
+            if (g_szMediaFile[0] != L'\0') 
+            {
+                wstring cmd = L"open \"" + wstring(g_szMediaFile) + L"\" alias MediaFile";
+                MCIERROR openRc = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
+                if (openRc == 0) 
+                {
+                    g_mediaOpen = true;
+                    mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+                }
+                else 
+                {
+                    GetMciError(openRc, err); /* log err */
+                }
+            }
+        }
     }
+
+    // ensure slider timer runs
     SetTimer(g_hMain, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
-}
-
-/**
-* Resume media file if currently paused, or play if stopped.
-*/
-void ResumeMedia()
-{
-    wstring mode;
-    if (!QueryMode(mode)) {
-        // failed to query; try play as fallback
-        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
-        if (rc) { wstring err; GetMciError(rc, err); }
-        return;
-    }
-
-    if (mode == L"paused")
-    {
-        MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, NULL);
-        if (rc) { wstring err; GetMciError(rc, err); }
-
-        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
-    }
-    else if (mode == L"stopped")
-    {
-        // resume won't work; start playing from current position or start
-        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
-        if (rc) { wstring err; GetMciError(rc, err); }
-
-        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
-    }
-    else { /* already playing or unknown state */ }
 }
 
 /**
@@ -669,7 +689,7 @@ void StopMedia()
 {
     if (!g_mediaOpen) return;
     mciSendStringW(L"stop MediaFile", NULL, 0, NULL);
-    mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+	//mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL); // hack: ensure position resets to 0, since some files may not reset on stop
     KillTimer(g_hMain, IDM_SLIDER_UPDATE);
     if (g_hTrack) SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
 }
@@ -943,6 +963,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         if (id == CID_PAUSE && code == BN_CLICKED)
         {
             PauseMedia();
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
             return 0;
         }
         if (id == CID_STOP && code == BN_CLICKED)
