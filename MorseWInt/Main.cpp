@@ -598,16 +598,26 @@ static bool QueryMode(wstring& mode)
 /**
 * Play media file from current position or start if stopped.
 */
-void PlayMedia()
+void PlayMedia() 
 {
-    MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
-    if (rc) { wstring err; GetMciError(rc, err); return; }
-
-    // pass hwndNotify if you want MM_MCINOTIFY messages
-    rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
-    if (rc) { wstring err; GetMciError(rc, err); }
-
-    // ensure timer running
+    mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+   if (!g_mediaOpen) return;
+    wstring mode;
+    if (QueryMode(mode)) 
+    {
+        if (mode == L"paused") 
+        {
+            mciSendStringW(L"resume MediaFile", NULL, 0, g_hMain);
+        }
+        else if (mode == L"stopped") 
+        {
+            mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        }
+    }
+    else 
+    {
+        mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+    }
     SetTimer(g_hMain, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
 }
 
@@ -927,16 +937,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         // Handle media player button clicks and edit changes
         if (id == CID_PLAY && code == BN_CLICKED)
         {
-            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
-            wstring mode;
-            if (QueryMode(mode) && mode == L"paused")
-            {
-                ResumeMedia();
-            }
-            else
-            {
-                PlayMedia();
-            }
+            PlayMedia();
             return 0;
         }
         if (id == CID_PAUSE && code == BN_CLICKED)
