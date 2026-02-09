@@ -39,6 +39,7 @@
 #pragma comment(lib, "winmm.lib")
 
 // ------------------ Global Variables ----------------
+
 using namespace std;
 bool SaveDirOk = false;   // directory creation status
 Morse m; // global morse settings
@@ -53,6 +54,7 @@ const bool OPEN_EXTERNAL_MEDIAPLAYER = true; // play sound with external media p
 const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external media player or not - CONSOLE MODUS ONLY
 
 // -------------------- Global Window Handles ----------------
+
 HWND g_hWnd = NULL; // global window handle
 HWND g_hWndPlayer = NULL; // global media player window handle
 static HINSTANCE g_hInst = GetModuleHandle(nullptr); // global instance handle 
@@ -71,6 +73,7 @@ int words_per_minute = 33;
 int samples_per_second = 44100;
 
 // ----------------- MorseWInt Data Structures ----------------
+
 struct WavThreadParams {
     std::string morse;
     double tone;
@@ -105,6 +108,7 @@ struct ConsoleWavParams
 };
 
 // ---------------- MorseWInt Helper Functions ----------------
+
 int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
 
@@ -118,6 +122,7 @@ int ParseIntFromEdit(HWND hEdit, int defaultVal);
 double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
 
 // ---------------- MorseWInt Media Player Functions ----------------
+
 void ClosePlayer();
 void PlayMedia();
 void PauseMedia();
@@ -132,6 +137,7 @@ static MCIERROR OpenMediaFileAndPlay(const std::wstring& path, HWND hWndParent);
 
 
 // ---------------- MorseWInt GUI ----------------
+
 enum
 {
     CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104,
@@ -154,6 +160,7 @@ HWND hStop = NULL;
 HWND g_hTrack = NULL;
 
 // ----------------- Procedures -----------------
+
 static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
     UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
