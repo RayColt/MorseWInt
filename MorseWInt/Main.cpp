@@ -600,7 +600,7 @@ static bool QueryMode(wstring& mode)
 */
 void PlayMedia() 
 {
-    mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+    //mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL); TODO: bug: is set pause replay not working
    if (!g_mediaOpen) return;
     wstring mode;
     if (QueryMode(mode)) 
