@@ -958,6 +958,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         if (id == CID_PLAY && code == BN_CLICKED)
         {
             PlayMedia();
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
             return 0;
         }
         if (id == CID_PAUSE && code == BN_CLICKED)
