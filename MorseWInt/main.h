@@ -30,7 +30,7 @@
 #define IDM_PLAY_PAUSE      1002
 #define IDM_PLAY_STOP       1003
 #define IDM_SLIDER_UPDATE   1004
-#define SLIDER_TIMER_MS     100
+#define SLIDER_TIMER_MS     200
 
 
 // GUI includes
