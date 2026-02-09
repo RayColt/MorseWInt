@@ -606,28 +606,19 @@ static bool QueryMode(wstring& mode)
 }
 
 /**
-* Play media file from current position or start if stopped. 
-* Optionally receive MM_MCINOTIFY messages in hwndNotify.
-* 
-* @param hwndNotify
-*/
-/**
 * Play media file from current position or start if stopped.
-* Optionally receive MM_MCINOTIFY messages in hwndNotify.
-*
-* @param hwndNotify
 */
-void PlayMedia(HWND hwndNotify = NULL)
+void PlayMedia()
 {
     MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
     if (rc) { wstring err; GetMciError(rc, err); return; }
 
     // pass hwndNotify if you want MM_MCINOTIFY messages
-    rc = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
+    rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
     if (rc) { wstring err; GetMciError(rc, err); }
 
     // ensure timer running
-    SetTimer(hwndNotify, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
+    SetTimer(g_hMain, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
 }
 
 /**
@@ -954,14 +945,13 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             }
             else
             {
-                PlayMedia(hWnd);
+                PlayMedia();
             }
             return 0;
         }
         if (id == CID_PAUSE && code == BN_CLICKED)
         {
             PauseMedia();
-           // EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
             return 0;
         }
         if (id == CID_STOP && code == BN_CLICKED)
@@ -969,7 +959,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             StopMedia();
             return 0;
         }
-
         if (id == CID_EDIT && code == EN_CHANGE)
         {
             int len = GetWindowTextLengthW(hEdit); // number of characters
