@@ -30,7 +30,7 @@
 #define IDM_PLAY_PAUSE      1002
 #define IDM_PLAY_STOP       1003
 #define IDM_SLIDER_UPDATE   1004
-#define SLIDER_TIMER_MS     1005
+#define SLIDER_TIMER_MS     200
 
 
 // GUI includes
@@ -94,8 +94,9 @@ static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM
 static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void ClosePlayer();
-void PlayMedia();
+void PlayMedia(HWND hWndParent);
 void PauseMedia();
+void ResumeMedia();
 void StopMedia();
 static bool QueryMode(std::wstring& mode);
 static bool QueryLength(UINT& lengthMs);

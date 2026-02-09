@@ -611,26 +611,54 @@ static bool QueryMode(wstring& mode)
 * 
 * @param hwndNotify
 */
-void PlayMedia() 
+/**
+* Play media file from current position or start if stopped.
+* Optionally receive MM_MCINOTIFY messages in hwndNotify.
+*
+* @param hwndNotify
+*/
+void PlayMedia(HWND hwndNotify = NULL)
 {
-    if (!g_mediaOpen) return;
-    std::wstring mode;
-    if (QueryMode(mode)) 
-    {
-        if (mode == L"paused") 
-        {
-            mciSendStringW(L"resume MediaFile", NULL, 0, NULL);
-        }
-        else if (mode == L"stopped") 
-        {
-            mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
-        }
+    MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
+    if (rc) { wstring err; GetMciError(rc, err); return; }
+
+    // pass hwndNotify if you want MM_MCINOTIFY messages
+    rc = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
+    if (rc) { wstring err; GetMciError(rc, err); }
+
+    // ensure timer running
+    SetTimer(hwndNotify, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
+}
+
+/**
+* Resume media file if currently paused, or play if stopped.
+*/
+void ResumeMedia()
+{
+    wstring mode;
+    if (!QueryMode(mode)) {
+        // failed to query; try play as fallback
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
+        return;
     }
-    else 
+
+    if (mode == L"paused")
     {
-        mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
+        MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
+
+        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
     }
-    SetTimer(g_hMain, IDM_SLIDER_UPDATE, 200, NULL);
+    else if (mode == L"stopped")
+    {
+        // resume won't work; start playing from current position or start
+        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
+        if (rc) { wstring err; GetMciError(rc, err); }
+
+        if (g_hWndPlayer) SetTimer(g_hWndPlayer, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
+    }
+    else { /* already playing or unknown state */ }
 }
 
 /**
@@ -918,8 +946,16 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         // Handle media player button clicks and edit changes
         if (id == CID_PLAY && code == BN_CLICKED)
         {
-
-            PlayMedia();
+            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
+            wstring mode;
+            if (QueryMode(mode) && mode == L"paused")
+            {
+                ResumeMedia();
+            }
+            else
+            {
+                PlayMedia(hWnd);
+            }
             return 0;
         }
         if (id == CID_PAUSE && code == BN_CLICKED)
@@ -1121,6 +1157,17 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
         if (res)
         {
+            // Try to open the generated file and play if requested
+            if (!res->fullPath.empty())
+            {
+                MCIERROR err = OpenMediaFileAndPlay(res->fullPath, hWnd);
+                if (err)
+                {
+                    // Show friendly message but keep UI responsive
+                    ShowMciError(err, hWnd, _T("Failed to open generated WAV"));
+                }
+            }
+
             // Compose same output the UI used to display
             wstring spsin = StringToWString(to_string(res->sps));
             wstring tonein = StringToWString(trimDecimals(to_string(res->tone), 3));
@@ -1140,17 +1187,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
             // Re-enable buttons that were disabled while creating the wav
             EnableWindow(GetDlgItem(hWnd, CID_ENCODE), TRUE);
             EnableWindow(GetDlgItem(hWnd, CID_DECODE), TRUE);
-
-            // Try to open the generated file and play if requested
-            if (!res->fullPath.empty())
-            {
-                MCIERROR err = OpenMediaFileAndPlay(res->fullPath, hWnd);
-                if (err)
-                {
-                    // Show friendly message but keep UI responsive
-                    ShowMciError(err, hWnd, _T("Failed to open generated WAV"));
-                }
-            }
 
             delete res;
         }
