@@ -94,9 +94,8 @@ static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM
 static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void ClosePlayer();
-void PlayMedia(HWND hWndParent);
+void PlayMedia();
 void PauseMedia();
-void ResumeMedia();
 void StopMedia();
 static bool QueryMode(std::wstring& mode);
 static bool QueryLength(UINT& lengthMs);
