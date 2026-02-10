@@ -47,7 +47,7 @@ public:
 	/**
 	* Constructor / Destructor
 	*/
-	MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show, bool open);
+	MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show);
 	~MorseWav() = default;
 
 	/**

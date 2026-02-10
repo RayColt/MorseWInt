@@ -8,7 +8,7 @@ using namespace std;
 /**
 * Constructor
 */
-MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show, bool open)
+MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double samples_per_second, int modus, bool show)
 {
     MorseWav::CreateFullPath();
     MorseCode = morsecode;
@@ -33,7 +33,7 @@ MorseWav::MorseWav(const char* morsecode, double tone, double wpm, double sample
 	cout << " (" << ((double)PcmCount / Sps) << " s @ " << (Sps / 1e3) << " kHz)";
 	cout << " written to\n " << FullPath << " (" << (WaveSize / 1024.0) << " kB)\n";
 
-    if (open)
+    if (show)
     {
         /* IF SHELLAPI DOES NOT WORK, USE SYSTEM COMMAND
 		 * BUT THIS OPENS A NEW CONSOLE WINDOW WHICH IS ANNOYING

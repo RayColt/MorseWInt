@@ -225,300 +225,6 @@ string trimDecimals(const string& s, int decimals)
     return s.substr(0, end);
 }
 
-// ---------------- MorseWInt MCI Functions ----------------
-
-/**
-* Initialize hidden child window to get a 
-* HWND for MCI notifications 
-*
-* @param hWndParent
-* @return BOOL
-*/
-BOOL InitWavPlayerWindow(HWND hWndParent)
-{
-    RECT rc;
-    GetClientRect(hWndParent, &rc);
-
-    g_hWndPlayer = CreateWindowEx(
-        0, _T("STATIC"), NULL,
-        WS_CHILD | WS_VISIBLE | SS_BLACKRECT,
-        0, 0, 0, 0,
-        hWndParent, NULL, g_hInst, NULL);
-
-    return (g_hWndPlayer != NULL);
-}
-
-/**
-* Open media file and play
-*
-* @param path
-* @param hWndParent
-* @return MCIERROR
-*/
-static MCIERROR OpenMediaFileAndPlay(const wstring& path, HWND hwndNotify)
-{
-    // Close any previously open file first
-    if (g_mediaOpen)
-    {
-        mciSendString(_T("stop MediaFile"), NULL, 0, NULL);
-        mciSendString(_T("close MediaFile"), NULL, 0, NULL);
-        g_mediaOpen = false;
-        g_szMediaFile[0] = _T('\0');
-    }
-
-    MCIERROR err = 0;
-    wstring cmd = L"open \"" + path + L"\" type waveaudio alias MediaFile";
-    err = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
-    if (err)
-    {
-        // fallback without explicit type
-        cmd = L"open \"" + path + L"\" alias MediaFile";
-        err = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
-    }
-    if (err) return err;
-
-    // attach notify window
-    if (hwndNotify) 
-    {
-        wchar_t putCmd[128];
-        swprintf_s(putCmd, L"put MediaFile window handle %llu", (unsigned long long)(UINT_PTR)hwndNotify);
-        mciSendStringW(putCmd, NULL, 0, NULL);
-    }
-
-    // Save path into g_szMediaFile (TCHAR buffer). Project is UNICODE -> TCHAR == wchar_t.
-    _tcsncpy_s(g_szMediaFile, path.c_str(), _TRUNCATE);
-    g_mediaOpen = true;
-
-    // set up slider
-    SetTracker(g_hTrack);
-
-    // play with notify
-    MCIERROR playErr = mciSendStringW(L"play MediaFile notify", NULL, 0, hwndNotify);
-    if (playErr) 
-    {
-        mciSendStringW(L"close MediaFile", NULL, 0, NULL);
-        g_mediaOpen = false;
-        g_szMediaFile[0] = L'\0';
-        return playErr;
-    }
-
-    // start timer to update slider
-    SetTimer(hwndNotify, IDM_SLIDER_UPDATE, 200, NULL);
-    return 0;
-}
-
-/**
-* Get MCI error string for given error code
-* 
-* @param err
-* @param out
-*/
-static void GetMciError(MCIERROR err, wstring& out) 
-{
-    if (err == 0) { out.clear(); return; }
-    wchar_t buf[256] = {};
-    mciGetErrorStringW(err, buf, (DWORD)size(buf));
-    out = buf;
-}
-
-/**
-* Query current mode of media file (playing, paused, stopped, etc.)
-* 
-* @param mode
-* @return bool
-*/
-static bool QueryMode(wstring& mode) 
-{
-    wchar_t buf[128] = {};
-    MCIERROR rc = mciSendStringW(L"status MediaFile mode", buf, (UINT)size(buf), NULL);
-    if (rc != 0) return false;
-    mode = buf; // "playing", "paused", "stopped", etc.
-    return true;
-}
-
-/**
-* Play media file from current position or start if stopped.
-*/
-void PlayMedia()
-{
-    if (!g_mediaOpen) return;
-    // Query mode, position and length
-    wstring mode;
-    UINT pos = 0, len = 0;
-    bool haveMode = QueryMode(mode);
-    QueryPosition(pos);   // ignore failure here, pos stays 0
-    QueryLength(len);     // ignore failure here, len stays 0
-
-    // If we are at or past the end, seek to start first
-    if (len > 0 && pos >= len) 
-    {
-        MCIERROR rc = mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
-        if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
-        // after seek, set pos = 0 for logic below
-        pos = 0;
-    }
-
-    // Decide action based on mode
-    if (haveMode) {
-        if (mode == L"paused") 
-        {
-            MCIERROR rc = mciSendStringW(L"resume MediaFile", NULL, 0, g_hWnd);
-            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
-        }
-		else if (mode == L"stopped")
-        {
-            // ensure we start from beginning (seek done above if needed)
-            MCIERROR rc = mciSendStringW(L"play MediaFile from 0 notify", NULL, 0, g_hWnd);
-            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
-        }
-        else if (mode == L"playing") 
-        {
-            // already playing — optionally restart from beginning
-            // mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL);
-            // mciSendStringW(L"play MediaFile notify", NULL, 0, g_hMain);
-        }
-        else 
-        {
-            // unknown mode: try play as fallback
-            MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
-            if (rc) { wstring err; GetMciError(rc, err); /* log err */ }
-        }
-    }
-    else 
-    {
-        // status failed — alias might be closed; try to re-open or play anyway
-        MCIERROR rc = mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
-        if (rc) 
-        {
-            wstring err; GetMciError(rc, err);
-            // If play fails because alias closed, reopen file (use g_szMediaFile)
-            if (g_szMediaFile[0] != L'\0') 
-            {
-                wstring cmd = L"open \"" + wstring(g_szMediaFile) + L"\" alias MediaFile";
-                MCIERROR openRc = mciSendStringW(cmd.c_str(), NULL, 0, NULL);
-                if (openRc == 0) 
-                {
-                    g_mediaOpen = true;
-                    mciSendStringW(L"play MediaFile notify", NULL, 0, g_hWnd);
-                }
-                else 
-                {
-                    GetMciError(openRc, err); /* log err */
-                }
-            }
-        }
-    }
-
-    // ensure slider timer runs
-    SetTimer(g_hWnd, IDM_SLIDER_UPDATE, SLIDER_TIMER_MS, NULL);
-}
-
-/**
-* Pause media file if currently playing.
-*/
-void PauseMedia() 
-{
-    if (!g_mediaOpen) return;
-    mciSendStringW(L"pause MediaFile", NULL, 0, NULL);
-    // keep timer running so UI shows current pos (it will be stable)
-}
-
-/**
-* Stop media file if currently playing or paused, and seek to start.
-*/
-void StopMedia() 
-{
-    if (!g_mediaOpen) return;
-    mciSendStringW(L"stop MediaFile", NULL, 0, NULL);
-	//mciSendStringW(L"seek MediaFile to start", NULL, 0, NULL); // hack: ensure position resets to 0, since some files may not reset on stop
-    KillTimer(g_hWnd, IDM_SLIDER_UPDATE);
-    if (g_hTrack) SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
-}
-
-/**
-* Close MCI media file if open
-*/
-void ClosePlayer()
-{
-    if (g_mediaOpen)
-    {
-        mciSendString(_T("stop MediaFile"), NULL, 0, NULL);
-        mciSendString(_T("close MediaFile"), NULL, 0, NULL);
-        g_mediaOpen = false;
-        g_szMediaFile[0] = _T('\0');
-    }
-}
-
-/**
-* Show MCI error text
-* 
-* @param err
-* @param hWnd
-* @param prefix
-*/
-void ShowMciError(MCIERROR err, HWND hWnd, LPCTSTR prefix)
-{
-    if (err == 0) return;
-    TCHAR errText[256] = { 0 };
-    if (mciGetErrorString(err, errText, (UINT)_countof(errText)))
-    {
-        TCHAR buf[512];
-        _stprintf_s(buf, _countof(buf), _T("%s: (0x%08X)\r\n%s"), prefix, (DWORD)err, errText);
-        MessageBox(hWnd, buf, _T("MCI Error"), MB_ICONERROR);
-    }
-    else
-    {
-        TCHAR buf[128];
-        _stprintf_s(buf, _countof(buf), _T("%s: (0x%08X)"), prefix, (DWORD)err);
-        MessageBox(hWnd, buf, _T("MCI Error"), MB_ICONERROR);
-    }
-}
-
-/**
-* Query length of media file in milliseconds
-* 
-* @param lengthMs
-* @return bool
-*/
-static bool QueryLength(UINT& lengthMs) 
-{
-    wchar_t buf[64] = {};
-    MCIERROR rc = mciSendStringW(L"status MediaFile length", buf, (UINT)size(buf), NULL);
-    if (rc) return false;
-    lengthMs = _wtoi(buf);
-    return true;
-}
-
-/**
-* Query current position in media file in milliseconds
-* 
-* @param posMs
-* @return bool
-*/
-static bool QueryPosition(UINT& posMs) 
-{
-    wchar_t buf[64] = {};
-    MCIERROR rc = mciSendStringW(L"status MediaFile position", buf, (UINT)size(buf), NULL);
-    if (rc) return false;
-    posMs = _wtoi(buf);
-    return true;
-}
-
-/**
-* Set trackbar range based on media file length
-* 
-* @param hTrackbar
-*/
-void SetTracker(HWND hTrackbar)
-{
-    UINT lengthMs = 0;
-    if (!QueryLength(lengthMs)) return;
-    // set trackbar range to milliseconds (or scaled units)
-    SendMessage(hTrackbar, TBM_SETRANGE, TRUE, MAKELONG(0, (int)lengthMs));
-    SendMessage(hTrackbar, TBM_SETPAGESIZE, 0, 1000); // page = 1s
-    SendMessage(hTrackbar, TBM_SETPOS, TRUE, 0);
-}
-
 // ---------------- MorseWInt GUI ----------------
 
 // Create child controls on given window
@@ -606,16 +312,6 @@ static void CreateMorseControls(HWND hWnd)
         radiobuttonX + 145, wavinY + 40, 65, 18,
         hWnd, (HMENU)(INT_PTR)CID_SPS, g_hInst, NULL);
 
-    // Create play, pause, stop buttons
-    hPlay = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 70, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PLAY, g_hInst, NULL);
-
-    hPause = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 105, wavinY + 235, 20, 20, hWnd, (HMENU)CID_PAUSE, g_hInst, NULL);
-
-    hStop = CreateWindowEx(0, WC_BUTTON, L"", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-        radiobuttonX + 140, wavinY + 235, 20, 20, hWnd, (HMENU)CID_STOP, g_hInst, NULL);
-
     // Create radio buttons
     HWND hMorse = CreateWindowExW(
         WS_EX_TRANSPARENT, L"BUTTON", L"Morse",
@@ -682,15 +378,6 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
     SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
 
-    // Initialize and create trackbar for MCI player
-    INITCOMMONCONTROLSEX iccb = { sizeof(iccb), ICC_BAR_CLASSES };
-    InitCommonControlsEx(&iccb);
-    g_hTrack = CreateWindowExW(0, TRACKBAR_CLASSW, NULL,
-        WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS,
-        radiobuttonX, radiobuttonY + 365, 240, 15, hWnd, (HMENU)CID_TRACK, NULL, NULL);
-    SendMessage(g_hTrack, TBM_SETRANGE, TRUE, MAKELONG(0, 1000));
-    SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
-
     // Create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
     HWND hDecodeButton = CreateWindowExW(0, L"BUTTON", L"DECODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 225, 355, 185, 40, hWnd, (HMENU)CID_DECODE, g_hInst, NULL);
@@ -753,7 +440,7 @@ static int ShowMorseApp(HWND &hwnd)
         L"MorseWInt 01111 010101 11111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        700, 490,//460
+        700, 460,
         nullptr, nullptr, g_hInst, nullptr
     );
     //HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
@@ -785,7 +472,7 @@ static unsigned __stdcall WavThreadProc(void* pv)
     try
     {
         // Heavy work on background thread
-        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, false, false);
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->showExternal);
 
         res->fullPath = StringToWString(mw.GetFullPath());
         FullPath = mw.GetFullPath();
@@ -832,7 +519,7 @@ static unsigned __stdcall ConsoleWavThreadProc(void* pv)
     if (!p) return 0;
     try
     {
-        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->openExternal, p->showExternal);
+        MorseWav mw(p->morse.c_str(), p->tone, p->wpm, p->sps, p->channels, p->showExternal);
     }
     catch (const exception& e)
     {
@@ -888,42 +575,16 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     {
     case WM_CREATE:
     {
-        g_hWnd = hWnd;
-        if (!InitWavPlayerWindow(hWnd))
-        {
-            MessageBox(hWnd, _T("Failed to create player window."), _T("Error"), MB_ICONERROR);
-            PostQuitMessage(1);
-        }
         CreateMorseControls(hWnd);
         wstring out = L"See command line for help:\r\n morse.exe -h or -help";
         SendMessageW(hWavOut, WM_SETTEXT, 0, (LPARAM)out.c_str());
-
         return 0;
     }
     case WM_COMMAND:
     {
         int id = LOWORD(wParam);
         int code = HIWORD(wParam);
-        HWND hCtrl = (HWND)lParam;
 
-        // Handle media player button clicks and edit changes
-        if (id == CID_PLAY && code == BN_CLICKED)
-        {
-            PlayMedia();
-            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), TRUE);
-            return 0;
-        }
-        if (id == CID_PAUSE && code == BN_CLICKED)
-        {
-            PauseMedia();
-            EnableWindow(GetDlgItem(hWnd, CID_PAUSE), FALSE);
-            return 0;
-        }
-        if (id == CID_STOP && code == BN_CLICKED)
-        {
-            StopMedia();
-            return 0;
-        }
         if (id == CID_EDIT && code == EN_CHANGE)
         {
             int len = GetWindowTextLengthW(hEdit); // number of characters
@@ -1017,12 +678,11 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 p->sps = stod(WStringToString(spsin));
                 p->channels = STEREO;
                 p->hwnd = hWnd;
+                p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 // start thread (CRT-friendly)
                 uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
                 if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
-
-                // Do not call PlayMedia() here - file is not yet created/opened.
             }
             else if (b6)
             {
@@ -1054,12 +714,11 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 p->sps = stod(WStringToString(spsin));
                 p->channels = MONO;
                 p->hwnd = hWnd;
+				p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 // start thread (CRT-friendly)
                 uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
                 if (h != 0) CloseHandle(reinterpret_cast<HANDLE>(h));
-
-                // Do not call PlayMedia() here - file is not yet created/opened.
             }
             return 0;
         }
@@ -1111,17 +770,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         WavThreadResult* res = reinterpret_cast<WavThreadResult*>(wParam);
         if (res)
         {
-            // Try to open the generated file and play if requested
-            if (!res->fullPath.empty())
-            {
-                MCIERROR err = OpenMediaFileAndPlay(res->fullPath, hWnd);
-                if (err)
-                {
-                    // Show friendly message but keep UI responsive
-                    ShowMciError(err, hWnd, _T("Failed to open generated WAV"));
-                }
-            }
-
             // Compose same output the UI used to display
             wstring spsin = StringToWString(to_string(res->sps));
             wstring tonein = StringToWString(trimDecimals(to_string(res->tone), 3));
@@ -1146,127 +794,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         }
         return 0;
     }
-    case WM_DRAWITEM:
-    {
-        LPDRAWITEMSTRUCT p = (LPDRAWITEMSTRUCT)lParam;
-        HDC dc = p->hDC;
-        RECT r = p->rcItem;
-        // background
-        HBRUSH bg = CreateSolidBrush(RGB(240, 240, 240));
-        FillRect(dc, &r, bg);
-        DeleteObject(bg);
-
-        // pressed effect
-        if (p->itemState & ODS_SELECTED)
-        {
-            DrawEdge(dc, &r, EDGE_SUNKEN, BF_RECT);
-        }
-        else
-        {
-            DrawEdge(dc, &r, EDGE_RAISED, BF_RECT);
-        }
-
-        // center coords
-        int cx = (r.left + r.right) / 2;
-        int cy = (r.top + r.bottom) / 2;
-
-        // choose shape by control id
-        switch (p->CtlID) {
-        case CID_PLAY: // Play (triangle)
-        {
-            POINT pts[3] = {
-                {cx - 4, cy - 6},
-                {cx - 4, cy + 6},
-                {cx + 6, cy}
-            };
-            HPEN oldPen = (HPEN)SelectObject(dc, GetStockObject(BLACK_PEN));
-            HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
-            HBRUSH old = (HBRUSH)SelectObject(dc, b);
-            Polygon(dc, pts, 3);
-            SelectObject(dc, old);
-            DeleteObject(b);
-            SelectObject(dc, oldPen);
-
-            break;
-        }
-        case CID_PAUSE: // Pause (two bars)
-        {
-            LPDRAWITEMSTRUCT dis = (LPDRAWITEMSTRUCT)lParam;
-            // choose color based on state
-            bool disabled = (dis->itemState & ODS_DISABLED) != 0;
-            COLORREF col = disabled ? GetSysColor(COLOR_GRAYTEXT) : RGB(0, 0, 0);
-            HBRUSH b = CreateSolidBrush(col);
-            RECT bar = { cx - 5, cy - 6, cx - 2, cy + 6 };
-            FillRect(dc, &bar, b);
-            bar = { cx + 2, cy - 6, cx + 5, cy + 6 };
-            FillRect(dc, &bar, b);
-            DeleteObject(b);
-            break;
-        }
-        case CID_STOP: // Stop (square)
-        {
-            HBRUSH b = CreateSolidBrush(RGB(0, 0, 0));
-            RECT sq = { cx - 5, cy - 5, cx + 5, cy + 5 };
-            FillRect(dc, &sq, b);
-            DeleteObject(b);
-            break;
-        }
-        }
-        return TRUE;
-    }
-    case WM_TIMER:
-        if (wParam == IDM_SLIDER_UPDATE)
-        {
-            UINT pos = 0;
-            if (QueryPosition(pos) && g_hTrack)
-            {
-                SendMessage(g_hTrack, TBM_SETPOS, TRUE, (LPARAM)pos);
-            }
-            else { /* optional: stop timer if query fails */ }
-        }
-        break;
-    case MM_MCINOTIFY:
-        if (wParam == MCI_NOTIFY_SUCCESSFUL) 
-        {
-            // playback finished
-            KillTimer(hWnd, IDM_SLIDER_UPDATE);
-            if (g_hTrack) SendMessage(g_hTrack, TBM_SETPOS, TRUE, 0);
-        }
-        break;
-    case WM_HSCROLL:
-    {
-        int code = (int)LOWORD(wParam);
-        int pos = (int)SendMessage(g_hTrack, TBM_GETPOS, 0, 0);
-
-        if (code == TB_THUMBTRACK)
-        {
-            // while dragging: optionally show preview time but don't seek continuously
-            // SendMessage(hTrack, TBM_SETPOS, TRUE, pos); // already handled by control
-        }
-        else if (code == TB_THUMBPOSITION || code == TB_ENDTRACK)
-        {
-            // user finished seeking: seek MCI to pos (ms)
-            wchar_t cmd[128];
-            swprintf_s(cmd, L"seek MediaFile to %d", pos);
-            MCIERROR rc = mciSendStringW(cmd, NULL, 0, NULL);
-            if (rc == 0)
-            {
-                // if currently playing, resume play from new position
-                wstring mode;
-                if (QueryMode(mode) && mode == L"playing")
-                {
-                    // restart play from current position (some drivers auto continue)
-                    mciSendStringW(L"play MediaFile notify", NULL, 0, NULL);
-                }
-            }
-            else
-            {
-                wstring err; GetMciError(rc, err);
-                // log or show error
-            }
-        }
-    }
-    break;
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -1282,8 +809,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     }
     case WM_DESTROY:
     {
-        // Ensure MCI file closed on exit
-        ClosePlayer();
         PostQuitMessage(0);
         return 0;
     }
@@ -1425,7 +950,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 p->wpm = words_per_minute;
                 p->sps = samples_per_second;
                 p->channels = STEREO;
-                p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
 				p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 uintptr_t th = _beginthreadex(NULL, 0, &ConsoleWavThreadProc, p, 0, NULL);
@@ -1439,7 +963,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 {
                     // fallback to synchronous if thread creation failed
                     delete p;
-                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, OPEN_EXTERNAL_MEDIAPLAYER, SHOW_EXTERNAL_MEDIAPLAYER); }
+                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, SHOW_EXTERNAL_MEDIAPLAYER); }
                     catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
                 }
             }
@@ -1452,7 +976,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 p->wpm = words_per_minute;
                 p->sps = samples_per_second;
                 p->channels = MONO;
-                p->openExternal = OPEN_EXTERNAL_MEDIAPLAYER;
                 p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 uintptr_t th = _beginthreadex(NULL, 0, &ConsoleWavThreadProc, p, 0, NULL);
@@ -1464,7 +987,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 else
                 {
                     delete p;
-                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, OPEN_EXTERNAL_MEDIAPLAYER, SHOW_EXTERNAL_MEDIAPLAYER); }
+                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, SHOW_EXTERNAL_MEDIAPLAYER); }
                     catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
                 }
             }
