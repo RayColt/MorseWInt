@@ -141,6 +141,7 @@ int ParseIntFromEdit(HWND hEdit, int defaultVal);
 double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
 
 // ----------------- Procedures -----------------
+
 static int ShowMorseApp(HWND& hwnd);
 
 static LRESULT CALLBACK Edit_SelectAll_SubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam,

@@ -165,7 +165,6 @@ static void AttachToConsole(BOOLEAN newconsole)
     freopen_s(&fp, "CONIN$", "r", stdin);
 }
 
-
 /**
 * Convert string to wstring
 *
