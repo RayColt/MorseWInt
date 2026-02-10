@@ -133,6 +133,8 @@ int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
 
 static void AttachToNewConsole();
+static bool HasConsole();
+static void MakeMorseSafe(double& tone, int& wpm, int& sps);
 
 wstring GetTextFromEditField(HWND hWnd);
 string trimDecimals(const string& s, int decimals);
