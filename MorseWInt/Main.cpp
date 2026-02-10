@@ -149,23 +149,6 @@ static void ToLowerInPlace(TCHAR* s)
 }
 
 /**
-* Creates new output console
-*  or attaches to parent console - buggy
-* 
-* @param newconsole
-*/
-static void AttachToConsole(BOOLEAN newconsole)
-{
-	if (newconsole) AllocConsole();
-	else AttachConsole(ATTACH_PARENT_PROCESS);
-
-    FILE* fp = nullptr;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-    freopen_s(&fp, "CONIN$", "r", stdin);
-}
-
-/**
 * Convert string to wstring
 *
 * @param str
@@ -818,6 +801,91 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
 }
 
 /**
+* Creates new output console
+*  or attaches to parent console - buggy
+*
+* @param newconsole
+*/
+static void AttachToConsole(BOOLEAN newconsole)
+{
+    if (newconsole) AllocConsole();
+    else AttachConsole(ATTACH_PARENT_PROCESS);
+
+    FILE* fp = nullptr;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    freopen_s(&fp, "CONIN$", "r", stdin);
+}
+
+/**
+* Check if a console is available (e.g., launched from cmd)
+* 
+* @return bool
+*/
+static bool HasConsole()
+{
+    HWND hwndConsole = GetConsoleWindow();
+    if (hwndConsole != NULL) return true;
+
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn != INVALID_HANDLE_VALUE && hIn != NULL)
+    {
+        DWORD mode;
+        if (GetConsoleMode(hIn, &mode))
+            return true; // real console input handle
+    }
+
+    //Fallback: check CRT stdin file descriptor is valid before calling _isatty
+    int fh = _fileno(stdin);
+    if (fh < 0) return false; // IMPORTANT: avoid calling _isatty if fh < 0
+    return _isatty(fh) != 0;
+}
+
+/**
+* Try to attach to parent console if available
+* 
+* @return bool
+*/
+static bool TryAttachParentConsole()
+{
+    // AttachConsole returns nonzero on success
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+        return false;
+
+    // Rebind CRT stdio only after AttachConsole succeeded
+    FILE* f = nullptr;
+    freopen_s(&f, "CONIN$", "r", stdin);
+    freopen_s(&f, "CONOUT$", "w", stdout);
+    freopen_s(&f, "CONOUT$", "w", stderr);
+
+    // Optional: set mode to binary/text as needed
+    // _setmode(_fileno(stdout), _O_TEXT);
+
+    return true;
+}
+
+/**
+* Ensure a console is available if needed (for command-line mode)
+*/
+static void EnsureConsoleIfNeeded()
+{
+    // If we already have a console, nothing to do
+    //if (HasConsole()) return;
+
+    // Try to attach to parent console (e.g., launched from cmd)
+    //if (TryAttachParentConsole()) return;
+
+    // No parent console. Decide policy:
+    // - If you want to remain headless (no console), do nothing and avoid console I/O.
+    // - If you want an interactive console for this run, allocate one:
+    AllocConsole();
+    FILE* f = nullptr;
+    freopen_s(&f, "CONIN$",  "r", stdin);
+    freopen_s(&f, "CONOUT$", "w", stdout);
+    freopen_s(&f, "CONOUT$", "w", stderr);
+}
+
+/**
 * Windows application entry point
 * 
 * @param hInstance
@@ -898,8 +966,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; }
         else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; }
         else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; }
+        
         // command line mode
-        AttachToConsole(NEW_CONSOLE);
+        EnsureConsoleIfNeeded();
+        if (!HasConsole())
+        {
+            // No console available: fallback UI
+            MessageBoxW(NULL, L"No console available and no command-line arguments provided. When Using WIN+R.", L"Morse", MB_OK | MB_ICONINFORMATION);
+            return 0;
+        }
+
         // check options
         n = get_options(argc, argv);
         argc -= n;
@@ -991,11 +1067,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 }
             }
         }
-        if (NEW_CONSOLE == true)
-        {
-            cout << "\nPress [Enter] key to close program . . .\n";
-            int c = getchar();
-        }
+        cout << "\nPress [Enter] key to close program . . .\n";
+        int c = getchar();
        return 0;
     }
     else

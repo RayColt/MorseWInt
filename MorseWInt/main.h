@@ -20,9 +20,11 @@
 #include <cstdint>
 #include <process.h> // for _beginthreadex
 #include <tchar.h>
-#include <commdlg.h>
+//#include <commdlg.h>
 #include <ctype.h>
 #include <strsafe.h>
+#include <fcntl.h>
+#include <io.h>
 
 #define WM_MWAV_DONE (WM_USER + 1)
 
@@ -69,7 +71,6 @@ TCHAR g_szMediaFile[MAX_PATH] = { 0 };
 bool g_mediaOpen = false;
 
 // config options
-bool NEW_CONSOLE = false; // open a new console for output, false for recommended cmd.exe, true for powershell - buggy
 const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external media player or not - CONSOLE MODUS ONLY
 
 // -------------------- Global Window Handles ----------------
@@ -130,6 +131,11 @@ struct ConsoleWavParams
 
 int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
+
+static void AttachToConsole(BOOLEAN newconsole);
+static bool TryAttachParentConsole();
+static void EnsureConsoleIfNeeded();
+static bool HasConsole();
 
 wstring GetTextFromEditField(HWND hWnd);
 string trimDecimals(const string& s, int decimals);
