@@ -126,7 +126,6 @@ struct ConsoleWavParams
     bool showExternal;
 };
 
-
 // ---------------- MorseWInt Helper Functions ----------------
 
 int get_options(int argc, char* argv[]);
