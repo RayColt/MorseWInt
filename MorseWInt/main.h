@@ -132,10 +132,7 @@ struct ConsoleWavParams
 int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
 
-static void AttachToConsole(BOOLEAN newconsole);
-static bool TryAttachParentConsole();
-static void EnsureConsoleIfNeeded();
-static bool HasConsole();
+static void AttachToNewConsole();
 
 wstring GetTextFromEditField(HWND hWnd);
 string trimDecimals(const string& s, int decimals);

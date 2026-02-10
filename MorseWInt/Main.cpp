@@ -802,15 +802,11 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
 
 /**
 * Creates new output console
-*  or attaches to parent console - buggy
 *
-* @param newconsole
 */
-static void AttachToConsole(BOOLEAN newconsole)
+static void AttachToNewConsole()
 {
-    if (newconsole) AllocConsole();
-    else AttachConsole(ATTACH_PARENT_PROCESS);
-
+    AllocConsole();
     FILE* fp = nullptr;
     freopen_s(&fp, "CONOUT$", "w", stdout);
     freopen_s(&fp, "CONOUT$", "w", stderr);
@@ -839,50 +835,6 @@ static bool HasConsole()
     int fh = _fileno(stdin);
     if (fh < 0) return false; // IMPORTANT: avoid calling _isatty if fh < 0
     return _isatty(fh) != 0;
-}
-
-/**
-* Try to attach to parent console if available
-* 
-* @return bool
-*/
-static bool TryAttachParentConsole()
-{
-    // AttachConsole returns nonzero on success
-    if (!AttachConsole(ATTACH_PARENT_PROCESS))
-        return false;
-
-    // Rebind CRT stdio only after AttachConsole succeeded
-    FILE* f = nullptr;
-    freopen_s(&f, "CONIN$", "r", stdin);
-    freopen_s(&f, "CONOUT$", "w", stdout);
-    freopen_s(&f, "CONOUT$", "w", stderr);
-
-    // Optional: set mode to binary/text as needed
-    // _setmode(_fileno(stdout), _O_TEXT);
-
-    return true;
-}
-
-/**
-* Ensure a console is available if needed (for command-line mode)
-*/
-static void EnsureConsoleIfNeeded()
-{
-    // If we already have a console, nothing to do
-    //if (HasConsole()) return;
-
-    // Try to attach to parent console (e.g., launched from cmd)
-    //if (TryAttachParentConsole()) return;
-
-    // No parent console. Decide policy:
-    // - If you want to remain headless (no console), do nothing and avoid console I/O.
-    // - If you want an interactive console for this run, allocate one:
-    AllocConsole();
-    FILE* f = nullptr;
-    freopen_s(&f, "CONIN$",  "r", stdin);
-    freopen_s(&f, "CONOUT$", "w", stdout);
-    freopen_s(&f, "CONOUT$", "w", stderr);
 }
 
 /**
@@ -968,7 +920,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; }
         
         // command line mode
-        EnsureConsoleIfNeeded();
+        AttachToNewConsole();
         if (!HasConsole())
         {
             // No console available: fallback UI
