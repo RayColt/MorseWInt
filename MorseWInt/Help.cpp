@@ -26,7 +26,7 @@ string Help::GetHelpTxt()
 	str += " A-Z  0-9  !$ ' \" ( ) , . _ - / : ; = ? @\n";
 	str += "\n";
 	str += " USAGE:\n";
-	str += " .\\morse.exe                           Console\n";
+	str += " .\\morse.exe                           Win32\n";
 	str += " .\\morse.exe [-mode:] \"text or morse\"  Command line\n";
 	str += "\n";
 	str += " MODES:\n";
