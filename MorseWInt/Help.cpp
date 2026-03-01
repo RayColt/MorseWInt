@@ -46,6 +46,7 @@ string Help::GetHelpTxt()
 	str += "\n Place morse.exe in system32 and you can type:\n";
 	str += " morse ew -wpm:33 -hz:880 -sps:48000 sos sos\n";
 	str += " morse ewm -wpm:50 -hz:880 -sps:11025 paris paris paris\n";
+    str += " Windows Key + R and morse -h\n";
 	str += "\n";
 	str += " SOUND SETTINGS:\n";
 	str += " Tone(Hz)         20 - 8000 Hz\n";
