@@ -228,7 +228,7 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE | SS_LEFT, 10, 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
-    hCountLabel = CreateWindowExW(0, L"STATIC", StringToWString(to_string(MAX_TXT_INPUT)).c_str(),
+    hCountLabel = CreateWindowExW(0, L"STATIC", StringToWString(to_string(MAX_TXT_INPUT_WIN)).c_str(),
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX - 190, radiobuttonY - 10, 25, 18,
         hWnd, NULL, g_hInst, NULL);
 
@@ -358,7 +358,7 @@ static void CreateMorseControls(HWND hWnd)
     InitCommonControlsEx(&iccp);
     SendMessageW(hProg, PBM_SETRANGE, 0, MAKELPARAM(0, 100));   // 0–100%
     SendMessageW(hProg, PBM_SETPOS, 0, 0);                      // start at 0
-    SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT, 0); // limit text input
+    SendMessageW(hEdit, EM_LIMITTEXT, (WPARAM)MAX_TXT_INPUT_WIN, 0); // limit text input
 
     // Create buttons
     HWND hEncodeButton = CreateWindowExW(0, L"BUTTON", L"ENCODE", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 15, 355, 185, 40, hWnd, (HMENU)CID_ENCODE, g_hInst, NULL);
@@ -570,7 +570,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         if (id == CID_EDIT && code == EN_CHANGE)
         {
             int len = GetWindowTextLengthW(hEdit); // number of characters
-            int left = MAX_TXT_INPUT - len;
+            int left = MAX_TXT_INPUT_WIN - len;
             wstring out = StringToWString(to_string(left));
             SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
             if (len == 0)
@@ -578,9 +578,9 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
                 SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255)); // bar color
             }
-            if (len > 0 && len < MAX_TXT_INPUT)
+            if (len > 0 && len < MAX_TXT_INPUT_WIN)
             {
-                int percent = (len * 100) / MAX_TXT_INPUT;
+                int percent = (len * 100) / MAX_TXT_INPUT_WIN;
                 if (percent > 100) percent = 100;
                 SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
                 if (percent < 90)
@@ -935,8 +935,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         // generate morse code
         string arg_in;
         // choose max allowed chars based on requested action
-        int max_chars = MAX_TXT_INPUT;
-        if (action == "decode") max_chars = MAX_MORSE_INPUT;
+        int max_chars = MAX_TXT_INPUT_CONSOLE;
+        if (action == "decode") max_chars = MAX_MORSE_INPUT_CONSOLE;
         else if (action == "sound" || action == "wav" || action == "wav_mono") max_chars = MAX_SOUND_INPUT;
 
         // collect arguments but never exceed max_chars
