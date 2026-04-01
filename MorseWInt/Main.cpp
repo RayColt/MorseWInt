@@ -603,32 +603,8 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
         int code = HIWORD(wParam);
         if (id == CID_EDIT && code == EN_CHANGE)
         {
-            int len = GetWindowTextLengthW(hEdit); // number of characters
-            int left = MAX_TXT_INPUT_WIN - len;
-            wstring out = StringToWString(to_string(left));
-            SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
-            if (len == 0)
-            {
-                SendMessageW(hProg, PBM_SETPOS, 0, 0); // update position %
-                SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255)); // bar color
-            }
-            if (len > 0 && len < MAX_TXT_INPUT_WIN)
-            {
-                int percent = (len * 100) / MAX_TXT_INPUT_WIN;
-                if (percent > 100) percent = 100;
-                SendMessageW(hProg, PBM_SETPOS, percent, 0); // update position % 
-                if (percent < 90)
-                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
-                if (percent >= 95)
-                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
-                if (percent >= 99)
-                    SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
-            }
-            if (left < 0)
-            {
-                SendMessageW(hProg, PBM_SETPOS, 100, 0); // update position % 
-				SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
-            }
+             UpdateProgressFromEdit();
+			 return 0;
         }
 
         bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
