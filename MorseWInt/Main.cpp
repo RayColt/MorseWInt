@@ -566,7 +566,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     {
         int id = LOWORD(wParam);
         int code = HIWORD(wParam);
-
+        // TODO: debug ret val on decode & pbar update... no white spaces? 
         if (id == CID_EDIT && code == EN_CHANGE)
         {
             int len = GetWindowTextLengthW(hEdit); // number of characters
@@ -589,6 +589,11 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                     SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
                 if (percent >= 99)
                     SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
+            }
+            if (left < 0)
+            {
+                SendMessageW(hProg, PBM_SETPOS, 100, 0); // update position % 
+				SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
             }
         }
 
