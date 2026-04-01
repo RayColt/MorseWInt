@@ -139,6 +139,41 @@ static double ParseDoubleFromEdit(HWND hEdit, double defaultVal)
 }
 
 /**
+* Update progress bar and counter based on current edit text length
+*/
+static void UpdateProgressFromEdit()
+{
+    if (!hEdit || !hCountLabel || !hProg) return;
+
+    int len = GetWindowTextLengthW(hEdit); // number of characters currently in edit
+    int left = MAX_TXT_INPUT_WIN - len;
+    if (left < 0) left = 0;
+
+    // update counter
+    wstring out = StringToWString(to_string(left));
+    SendMessageW(hCountLabel, WM_SETTEXT, 0, (LPARAM)out.c_str());
+
+    // update progress bar & color (same logic as original EN_CHANGE handler)
+    if (len == 0)
+    {
+        SendMessageW(hProg, PBM_SETPOS, 0, 0);
+        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
+        return;
+    }
+
+    int percent = (len * 100) / MAX_TXT_INPUT_WIN;
+    if (percent > 100) percent = 100;
+    SendMessageW(hProg, PBM_SETPOS, percent, 0);
+
+    if (percent < 90)
+        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(0, 144, 255));
+    else if (percent >= 99)
+        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 0, 0));
+    else if (percent >= 95)
+        SendMessageW(hProg, PBM_SETBARCOLOR, 0, RGB(255, 66, 0));
+}
+
+/**
 * Convert string to lowercase in place
 * 
 * @param s
@@ -566,7 +601,6 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     {
         int id = LOWORD(wParam);
         int code = HIWORD(wParam);
-        // TODO: debug ret val on decode & pbar update... no white spaces? 
         if (id == CID_EDIT && code == EN_CHANGE)
         {
             int len = GetWindowTextLengthW(hEdit); // number of characters
@@ -616,30 +650,35 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 tmp = m.morse_encode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b2)
             {
                 tmp = m.morse_binary(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b3)
             {
                 tmp = m.bin_morse_hexdecimal(WStringToString(in), 0);
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b4)
             {
                 tmp = m.bin_morse_hexdecimal(WStringToString(in), 1);
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b5)
             {
                 tmp = m.morse_encode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
 
                 int si = ParseIntFromEdit(hSps, samples_per_second);
                 double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
@@ -676,6 +715,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 tmp = m.morse_encode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
 
                 int si = ParseIntFromEdit(hSps, samples_per_second);
                 double ti = ParseDoubleFromEdit(hTone, frequency_in_hertz);
@@ -716,36 +756,42 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 tmp = m.morse_decode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b2)
             {
                 tmp = m.morse_decode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b3)
             {
                 tmp = m.hexdecimal_bin_txt(WStringToString(in), 0);
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             else if (b4)
             {
                 tmp = m.hexdecimal_bin_txt(WStringToString(in), 1);
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             if (b5)
             {
                 tmp = m.morse_decode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             if (b6)
             {
                 tmp = m.morse_decode(WStringToString(in));
                 out = StringToWString(tmp);
                 SendMessageW(hEdit, WM_SETTEXT, 0, (LPARAM)out.c_str());
+                UpdateProgressFromEdit();
             }
             return 0;
         }

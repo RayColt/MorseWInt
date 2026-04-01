@@ -145,6 +145,7 @@ string WStringToString(const wstring& wstr);
 
 int ParseIntFromEdit(HWND hEdit, int defaultVal);
 double ParseDoubleFromEdit(HWND hEdit, double defaultVal);
+static void UpdateProgressFromEdit();
 
 // ----------------- Procedures -----------------
 
