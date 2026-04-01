@@ -80,8 +80,8 @@ HWND g_hWndPlayer = NULL; // global media player window handle
 static HINSTANCE g_hInst = GetModuleHandle(nullptr); // global instance handle 
 
 // input limits
-const int MAX_TXT_INPUT = 3000; // max chars for morse encoding/decoding
-const int MAX_MORSE_INPUT = 3000; // max chars for morse encoding/decoding
+const int MAX_TXT_INPUT = 6000; // max chars for morse encoding/decoding
+const int MAX_MORSE_INPUT = 6000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 2999; // max chars for sound generation
 const int MONO = 1;
 const int STEREO = 2;
