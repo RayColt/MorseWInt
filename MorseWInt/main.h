@@ -28,18 +28,9 @@
 
 #define WM_MWAV_DONE (WM_USER + 1)
 
-#define IDM_FILE_OPEN       1000
-#define IDM_PLAY_PLAY       1001
-#define IDM_PLAY_PAUSE      1002
-#define IDM_PLAY_STOP       1003
-#define IDM_SLIDER_UPDATE   1004
-#define SLIDER_TIMER_MS     200
-
 // GUI includes
 #include <commctrl.h>
 #pragma comment(lib, "comctl32.lib")
-// Multimedia library
-#pragma comment(lib, "winmm.lib")
 
 // ---------------- MorseWInt GUI ----------------
 
