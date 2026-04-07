@@ -376,7 +376,7 @@ static void CreateMorseControls(HWND hWnd)
     hUpperCase = CreateWindowExW(
         0, L"BUTTON", L"Only Uppercase, orig. Int. Morse.",
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
-        15, 400, 200, 20,
+        15, 405, 200, 20,
         hWnd, (HMENU)CID_UPPERCASE, g_hInst, NULL
     );
 
