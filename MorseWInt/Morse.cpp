@@ -88,7 +88,7 @@ void Morse::fill_morse_maps()
 	morse_map.insert(pair <string, string>("Z", "1100"));    // --..
 	morse_map.insert(pair <string, string>("_", "001101"));  // ..--.-
 
-	// new 6 bit assignments for lowercase(a->z)
+	// new 6 bit assignments for lowercase(a->z)), to morse passwords and safe urls
 	morse_map.insert(pair<string, string>("a", "000000")); // ......
 	morse_map.insert(pair<string, string>("b", "000001")); // .....-
 	morse_map.insert(pair<string, string>("c", "000010")); // ....-.
