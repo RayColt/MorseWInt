@@ -122,6 +122,7 @@ void Morse::fill_morse_maps()
 	}
 
 	morse_map.insert(pair <string, string>("ERR", "00000000")); // ........
+
 	// invert morse_map
 	for (const auto& it : morse_map)
 	{
