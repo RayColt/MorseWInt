@@ -11,7 +11,6 @@ RUN and compile the project in DEBUG/x86 mode!!<br>
 new 6 bit assignments for lowercase (a -> z), based upon ascci, to morse modern passwords and safe urls:<br>
 if (!uppercase)<br>
 {<br>
-	// new 6 bit assignments for lowercase(a->z)), to morse passwords and safe urls<br>
 	morse_map.insert(pair<string, string>("a", "1100001")); // --...-<br>
 	morse_map.insert(pair<string, string>("b", "100010")); // -...-.<br>
 	morse_map.insert(pair<string, string>("c", "100011")); // -...--<br>
