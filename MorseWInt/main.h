@@ -75,8 +75,8 @@ const int MAX_TXT_INPUT_WIN = 6000; // TODO: MAX_MORSE_INPUT_WIN - this will do 
 const int MAX_TXT_INPUT_CONSOLE = 3000; // max chars for morse encoding/decoding
 const int MAX_MORSE_INPUT_CONSOLE = 5000; // max chars for morse encoding/decoding
 const int MAX_SOUND_INPUT = 2999; // max chars for sound generation
-const int MONO = 1;
-const int STEREO = 2;
+const int MONO = 1; // mono channel count
+const int STEREO = 2; // stereo channel count
 
 // default morse settings
 const string error_in = "INPUT-ERROR";
