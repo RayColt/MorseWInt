@@ -92,32 +92,32 @@ void Morse::fill_morse_maps()
 	if (!uppercase)
 	{
 		// new 6 & 7 bit assignments for lowercase(a->z), to morse passwords and safe urls
-		morse_map.insert(pair<string, string>("a", "1100001")); // --....-
-		morse_map.insert(pair<string, string>("b", "100010")); // -...-.
-		morse_map.insert(pair<string, string>("c", "100011")); // -...--
-		morse_map.insert(pair<string, string>("d", "100100")); //-..-.. 
-		morse_map.insert(pair<string, string>("e", "100101")); // -..-.-
-		morse_map.insert(pair<string, string>("f", "100110")); // -..--.
-		morse_map.insert(pair<string, string>("g", "100111")); // -..---
-		morse_map.insert(pair<string, string>("h", "101000")); // -.-...
-		morse_map.insert(pair<string, string>("i", "101001")); // -.-..-
+		morse_map.insert(pair<string, string>("a", "1100001"));	// --....-
+		morse_map.insert(pair<string, string>("b", "100010"));	// -...-.
+		morse_map.insert(pair<string, string>("c", "100011"));	// -...--
+		morse_map.insert(pair<string, string>("d", "100100"));	//-..-.. 
+		morse_map.insert(pair<string, string>("e", "100101"));	// -..-.-
+		morse_map.insert(pair<string, string>("f", "100110"));	// -..--.
+		morse_map.insert(pair<string, string>("g", "100111"));	// -..---
+		morse_map.insert(pair<string, string>("h", "101000"));	// -.-...
+		morse_map.insert(pair<string, string>("i", "101001"));	// -.-..-
 		morse_map.insert(pair<string, string>("j", "1101010")); // --.-.-.
-		morse_map.insert(pair<string, string>("k", "1101011")); // --.-.--
-		morse_map.insert(pair<string, string>("l", "101100")); // -.--..
+		morse_map.insert(pair<string, string>("k", "1101011"));	// --.-.--
+		morse_map.insert(pair<string, string>("l", "101100"));	// -.--..
 		morse_map.insert(pair<string, string>("m", "1101101")); // --.--.-
-		morse_map.insert(pair<string, string>("n", "101110")); // -.---.
-		morse_map.insert(pair<string, string>("o", "101111")); // -.----
-		morse_map.insert(pair<string, string>("p", "110000")); // --....
-		morse_map.insert(pair<string, string>("q", "110001")); // --...-
-		morse_map.insert(pair<string, string>("r", "110010")); // --..-.
+		morse_map.insert(pair<string, string>("n", "101110"));	// -.---.
+		morse_map.insert(pair<string, string>("o", "101111"));	// -.----
+		morse_map.insert(pair<string, string>("p", "110000"));	// --....
+		morse_map.insert(pair<string, string>("q", "110001"));	// --...-
+		morse_map.insert(pair<string, string>("r", "110010"));	// --..-.
 		morse_map.insert(pair<string, string>("s", "1110011")); // ---..--
-		morse_map.insert(pair<string, string>("t", "110100")); // --.-..
-		morse_map.insert(pair<string, string>("u", "110101")); // --.-.-
-		morse_map.insert(pair<string, string>("v", "110110")); // --.--.
-		morse_map.insert(pair<string, string>("w", "110111")); // --.---
+		morse_map.insert(pair<string, string>("t", "110100"));	// --.-..
+		morse_map.insert(pair<string, string>("u", "110101"));	// --.-.-
+		morse_map.insert(pair<string, string>("v", "110110"));	// --.--.
+		morse_map.insert(pair<string, string>("w", "110111"));	// --.---
 		morse_map.insert(pair<string, string>("x", "1111000")); // ----...
-		morse_map.insert(pair<string, string>("y", "111001")); // ---..-
-		morse_map.insert(pair<string, string>("z", "111010")); // ---.-.
+		morse_map.insert(pair<string, string>("y", "111001"));	// ---..-
+		morse_map.insert(pair<string, string>("z", "111010"));	// ---.-.
 	}
 
 	morse_map.insert(pair <string, string>("ERR", "00000000")); // ........
