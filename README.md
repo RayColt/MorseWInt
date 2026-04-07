@@ -37,10 +37,16 @@ y ->	011000<br>
 z ->	011001<br><br>
 
 added extra zero at:<br>
-•	001100 -> "?" and "m"<br>
-•	001101 -> "_" and "n"<br>
-•	010010 -> " (double-quote) and "s"<br>
-•	010101 -> "." and "v"<br>
+001100 -> "?" and "m"<br>
+001101 -> "_" and "n"<br>
+010010 -> " (double-quote) and "s"<br>
+010101 -> "." and "v"<br>
+<br>
+// Replaced existing lowercase entries for m,n,s,v with 4-bit candidates<br>
+morse_map.insert(pair<string, string>("m", "0011"));   // ..-- new short code for 'm'<br>
+morse_map.insert(pair<string, string>("n", "0101"));   // .-.- new short code for 'n'<br>
+morse_map.insert(pair<string, string>("s", "1110"));   // ---. new short code for 's'<br>
+morse_map.insert(pair<string, string>("v", "1111"));   // ---- new short code for 'v'<br>
 
 
 
