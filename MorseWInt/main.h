@@ -58,8 +58,6 @@ using namespace std;
 bool SaveDirOk = false;   // directory creation status
 string action = ""; // global action setting
 string FullPath = ""; // full path to save file
-TCHAR g_szMediaFile[MAX_PATH] = { 0 };
-bool g_mediaOpen = false;
 
 // config options
 const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external media player or not - CONSOLE MODUS ONLY
@@ -67,7 +65,6 @@ const bool SHOW_EXTERNAL_MEDIAPLAYER = true; // play sound with visible external
 // -------------------- Global Window Handles ----------------
 
 HWND g_hWnd = NULL; // global window handle
-HWND g_hWndPlayer = NULL; // global media player window handle
 static HINSTANCE g_hInst = GetModuleHandle(nullptr); // global instance handle 
 
 // input limits
