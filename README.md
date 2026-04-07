@@ -36,7 +36,11 @@ x	010111
 y	011000
 z	011001
 
-
+added extra zero at:
+•	001100 -> "?" and "m"
+•	001101 -> "_" and "n"
+•	010010 -> " (double-quote) and "s"
+•	010101 -> "." and "v"
 
 
 
