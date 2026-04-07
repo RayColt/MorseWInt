@@ -8,45 +8,37 @@ RUN and compile the project in DEBUG/x86 mode!!<br>
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/1.jpg />
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/2.jpg />
 
-new 6 bit assignments for lowercase (a -> z), to morse passwords and safe urls:<br>
-a ->	000000<br>
-b ->	000001<br>
-c ->	000010<br>
-d ->	000011<br>
-e ->	000100<br>
-f ->	000101<br>
-g ->	000110<br>
-h ->	000111<br>
-i ->	001000<br>
-j ->	001001<br>
-k ->	001010<br>
-l ->	001011<br>
-m ->	0011000<br>
-n ->	0011010<br>
-o ->	001110<br>
-p ->	001111<br>
-q ->	010000<br>
-r ->	010001<br>
-s ->	0100100<br>
-t ->	010011<br>
-u ->	010100<br>
-v ->	0101010<br>
-w ->	010110<br>
-x ->	010111<br>
-y ->	011000<br>
-z ->	011001<br><br>
-
-added extra zero at:<br>
-001100 -> "?" and "m"<br>
-001101 -> "_" and "n"<br>
-010010 -> " (double-quote) and "s"<br>
-010101 -> "." and "v"<br>
-<br>
-// Replaced existing lowercase entries for m,n,s,v with 4-bit candidates<br>
-morse_map.insert(pair<string, string>("m", "0011"));   // ..-- new short code for 'm'<br>
-morse_map.insert(pair<string, string>("n", "0101"));   // .-.- new short code for 'n'<br>
-morse_map.insert(pair<string, string>("s", "1110"));   // ---. new short code for 's'<br>
-morse_map.insert(pair<string, string>("v", "1111"));   // ---- new short code for 'v'<br>
+new 6 bit assignments for lowercase (a -> z), based upon ascci, to morse modern passwords and safe urls:<br>
+if (!uppercase)<br>
+{<br>
+	// new 6 bit assignments for lowercase(a->z)), to morse passwords and safe urls<br>
+	morse_map.insert(pair<string, string>("a", "1100001")); // --...-<br>
+	morse_map.insert(pair<string, string>("b", "100010")); // -...-.<br>
+	morse_map.insert(pair<string, string>("c", "100011")); // -...--<br>
+	morse_map.insert(pair<string, string>("d", "100100")); //-..-.. <br>
+	morse_map.insert(pair<string, string>("e", "100101")); // -..-.-<br>
+	morse_map.insert(pair<string, string>("f", "100110")); // -..--.<br>
+	morse_map.insert(pair<string, string>("g", "100111")); // -..---<br>
+	morse_map.insert(pair<string, string>("h", "101000")); // -.-...<br>
+	morse_map.insert(pair<string, string>("i", "101001")); // -.-..-<br>
+	morse_map.insert(pair<string, string>("j", "1101010")); // --.-.-.<br>
+	morse_map.insert(pair<string, string>("k", "1101011")); // --.-.--<br>
+	morse_map.insert(pair<string, string>("l", "101100")); // -.--..<br>
+	morse_map.insert(pair<string, string>("m", "1101101")); // --.--.-<br>
+	morse_map.insert(pair<string, string>("n", "101110")); // -.---.<br>
+	morse_map.insert(pair<string, string>("o", "101111")); // -.----<br>
+	morse_map.insert(pair<string, string>("p", "110000")); // --....<br>
+	morse_map.insert(pair<string, string>("q", "110001")); // --...-<br>
+	morse_map.insert(pair<string, string>("r", "110010")); // --..-.<br>
+	morse_map.insert(pair<string, string>("s", "1110011")); // ---..--<br>
+	morse_map.insert(pair<string, string>("t", "110100")); // --.-..<br>
+	morse_map.insert(pair<string, string>("u", "110101")); // --.-.-<br>
+	morse_map.insert(pair<string, string>("v", "110110")); // --.--.<br>
+	morse_map.insert(pair<string, string>("w", "110111")); // --.---<br>
+	morse_map.insert(pair<string, string>("x", "1111000")); // ----...<br>
+	morse_map.insert(pair<string, string>("y", "111001")); // ---..-<br>
+	morse_map.insert(pair<string, string>("z", "111010")); // ---.-.<br>
+}<br>
 
 
 
