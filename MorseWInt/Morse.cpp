@@ -91,7 +91,7 @@ void Morse::fill_morse_maps()
 
 	if (!uppercase)
 	{
-		// new 6 & 7 bit assignments for lowercase(a->z)), to morse passwords and safe urls
+		// new 6 & 7 bit assignments for lowercase(a->z), to morse passwords and safe urls
 		morse_map.insert(pair<string, string>("a", "1100001")); // --...-
 		morse_map.insert(pair<string, string>("b", "100010")); // -...-.
 		morse_map.insert(pair<string, string>("c", "100011")); // -...--
