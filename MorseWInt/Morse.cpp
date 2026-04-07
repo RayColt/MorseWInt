@@ -87,6 +87,35 @@ void Morse::fill_morse_maps()
 	morse_map.insert(pair <string, string>("Y", "1011"));    // -.--
 	morse_map.insert(pair <string, string>("Z", "1100"));    // --..
 	morse_map.insert(pair <string, string>("_", "001101"));  // ..--.-
+
+	// new 6 bit assignments for lowercase(a->z)
+	morse_map.insert(pair<string, string>("a", "000000")); // ......
+	morse_map.insert(pair<string, string>("b", "000001")); // .....-
+	morse_map.insert(pair<string, string>("c", "000010")); // ....-.
+	morse_map.insert(pair<string, string>("d", "000011")); // ....--
+	morse_map.insert(pair<string, string>("e", "000100")); // ...-..
+	morse_map.insert(pair<string, string>("f", "000101")); // ...-.-
+	morse_map.insert(pair<string, string>("g", "000110")); // ...--.
+	morse_map.insert(pair<string, string>("h", "000111")); // ...---
+	morse_map.insert(pair<string, string>("i", "001000")); // ..-...
+	morse_map.insert(pair<string, string>("j", "001001")); // ..-..-
+	morse_map.insert(pair<string, string>("k", "001010")); // ..-.-.
+	morse_map.insert(pair<string, string>("l", "001011")); // ..-.--
+	morse_map.insert(pair<string, string>("m", "0011000")); // ..--...
+	morse_map.insert(pair<string, string>("n", "0011010")); // ..--.-.
+	morse_map.insert(pair<string, string>("o", "001110")); // ..---.
+	morse_map.insert(pair<string, string>("p", "001111")); // ..----
+	morse_map.insert(pair<string, string>("q", "010000")); // .-....
+	morse_map.insert(pair<string, string>("r", "010001")); // .-...-
+	morse_map.insert(pair<string, string>("s", "0100100")); // .-..-..
+	morse_map.insert(pair<string, string>("t", "010011")); // .-..--
+	morse_map.insert(pair<string, string>("u", "010100")); // .-.-..
+	morse_map.insert(pair<string, string>("v", "0101010")); // .-.-.-.
+	morse_map.insert(pair<string, string>("w", "010110")); // .-.--.
+	morse_map.insert(pair<string, string>("x", "010111")); // .-.---
+	morse_map.insert(pair<string, string>("y", "011000")); // .--...
+	morse_map.insert(pair<string, string>("z", "011001")); // .--..-
+
 	morse_map.insert(pair <string, string>("ERR", "00000000")); // ........
 	// invert morse_map
 	for (const auto& it : morse_map)
@@ -149,7 +178,8 @@ string Morse::morse_binary(string str)
 	for (size_t i = 0; i < str.length(); i++)
 	{
 		string chr = str.substr(i, 1);
-		line += getBinChar(stringToUpper(chr));
+		//line += getBinChar(stringToUpper(chr)); // org int morse
+		line += getBinChar(chr); // to run the new 6 bit lowercase characters
 		line += " ";
 	}
 	return trim(line);
@@ -170,7 +200,8 @@ string Morse::morse_encode(string str)
 	for (size_t i = 0; i < str.length(); i++)
 	{
 		string chr = str.substr(i, 1);
-		line += getMorse(stringToUpper(chr));
+		//line += getMorse(stringToUpper(chr)); // org int morse
+		line += getMorse(chr); // to run the new 6 bit lowercase characters
 		line += " ";
 	}
 	return trim(line);
