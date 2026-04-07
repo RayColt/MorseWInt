@@ -40,7 +40,7 @@ added extra zero at:<br>
 001100 -> "?" and "m"<br>
 001101 -> "_" and "n"<br>
 010010 -> " (double-quote) and "s"<br>
-010101 -> "." and "v"<br>
+010101 -> "." and "v"<br>
 <br>
 // Replaced existing lowercase entries for m,n,s,v with 4-bit candidates<br>
 morse_map.insert(pair<string, string>("m", "0011"));   // ..-- new short code for 'm'<br>
