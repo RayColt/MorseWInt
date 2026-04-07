@@ -372,8 +372,18 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
+	// checkbox for uppercase and original international morse code
+    hUpperCase = CreateWindowExW(
+        0, L"BUTTON", L"Only Uppercase, orig. Int. Morse.",
+        WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
+        15, 400, 200, 20,
+        hWnd, (HMENU)CID_UPPERCASE, g_hInst, NULL
+    );
+
     // set default radio button selection
     SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
+	// set default checkbox state
+    SendMessageW(hUpperCase, BM_SETCHECK, BST_CHECKED, 0);
 
     // create progress bar
     hProg = CreateWindowExW(
@@ -424,6 +434,7 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
+	SendMessageW(hUpperCase, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     // set default morse settings in edit boxes
     wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
@@ -457,7 +468,7 @@ static int ShowMorseApp(HWND &hwnd)
         L"MorseWInt 01111 010101 11111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        700, 460,
+        700, 475,
         nullptr, nullptr, g_hInst, nullptr
     );
     //HICON hIcon = LoadIcon(g_hInst, MAKEINTRESOURCE(IDI_ICON1));
@@ -601,19 +612,27 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
     {
         int id = LOWORD(wParam);
         int code = HIWORD(wParam);
+
+        bool uppercase = 1;
+        if (hUpperCase) {
+            uppercase = (SendMessageW(hUpperCase, BM_GETCHECK, 0, 0) == BST_CHECKED);
+        }
+        Morse m(uppercase);
+
         if (id == CID_EDIT && code == EN_CHANGE)
         {
              UpdateProgressFromEdit();
 			 return 0;
         }
 
-        bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false;
+        bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false, b8 = false;
         if (IsDlgButtonChecked(hWnd, CID_MORSE) == BST_CHECKED) { b1 = true; }
         else if (IsDlgButtonChecked(hWnd, CID_BIN) == BST_CHECKED) { b2 = true; }
         else if (IsDlgButtonChecked(hWnd, CID_HEX) == BST_CHECKED) { b3 = true; }
         else if (IsDlgButtonChecked(hWnd, CID_HEXBIN) == BST_CHECKED) { b4 = true; }
         else if (IsDlgButtonChecked(hWnd, CID_M2WS) == BST_CHECKED) { b5 = true; }
         else if (IsDlgButtonChecked(hWnd, CID_M2WM) == BST_CHECKED) { b6 = true; }
+        else if (IsDlgButtonChecked(hWnd, CID_UPPERCASE) == BST_CHECKED) { b8 = true; }
 
         wstring in = GetTextFromEditField(hEdit);
         string tmp;
@@ -933,6 +952,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     HWND argH = NULL;
     int n;
     double sps = 44100;
+    // TODO: add option for lowercase and extended chars
+	Morse m = Morse(1); // 1= default to orig Int. uppercase morse
     if (argc != 1)
     {
 		// determine action

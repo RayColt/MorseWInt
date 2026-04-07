@@ -18,7 +18,8 @@
 class Morse
 {
 public:
-	Morse();
+	bool uppercase;
+	Morse(bool uppercase);
 	std::multimap <std::string, std::string> morse_map;
 	std::multimap <std::string, std::string> morse_map_reversed;
 	void fill_morse_maps();

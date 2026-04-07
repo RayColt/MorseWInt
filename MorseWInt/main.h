@@ -48,7 +48,7 @@ enum
     CID_ENCODE = 100, CID_DECODE = 101, CID_EDIT = 102, CID_MORSE = 103, CID_BIN = 104,
     CID_HEX = 105, CID_HEXBIN = 106, CID_M2WS = 107, CID_M2WM = 108, CID_WAVOUT = 109, CID_HELP = 110,
     CID_TONE = 111, CID_WPM = 112, CID_SPS = 113, CID_PROG = 114, CID_PLAY = 115, CID_PAUSE = 116, CID_STOP = 117,
-    CID_TRACK = 118
+	CID_TRACK = 118, CID_UPPERCASE = 119
 };
 
 // Global handles to child controls
@@ -59,12 +59,12 @@ HWND hWpm = NULL;
 HWND hSps = NULL;
 HWND hProg = NULL;
 HWND hCountLabel = NULL;
+HWND hUpperCase = NULL;
 
 // ------------------ Global Variables ----------------
 
 using namespace std;
 bool SaveDirOk = false;   // directory creation status
-Morse m; // global morse settings
 string action = ""; // global action setting
 string FullPath = ""; // full path to save file
 TCHAR g_szMediaFile[MAX_PATH] = { 0 };
