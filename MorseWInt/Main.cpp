@@ -372,7 +372,7 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
-	// checkbox for uppercase and original international morse code
+	// checkbox for uppercase original international morse code or with modern lowercase a-z assignments
     hUpperCase = CreateWindowExW(
         0, L"BUTTON", L"Only Uppercase, orig. Int. Morse.",
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
