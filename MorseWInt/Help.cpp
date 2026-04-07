@@ -24,6 +24,7 @@ string Help::GetHelpTxt()
 	str += "\n";
 	str += " SUPPORTED CHARACTERS(Url Safe):\n";
 	str += " A-Z  0-9  !$ ' \" ( ) , . _ - / : ; = ? @\n";
+	str += " optional: a-z (to morse modern passwords and urls)\n";
 	str += "\n";
 	str += " USAGE:\n";
 	str += " .\\morse.exe                           Win32\n";
