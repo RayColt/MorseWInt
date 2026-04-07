@@ -58,6 +58,7 @@ void Morse::fill_morse_maps()
 	morse_map.insert(pair <string, string>("=", "10001"));   // -...-
 	morse_map.insert(pair <string, string>("?", "001100"));  // ..--..
 	morse_map.insert(pair <string, string>("@", "011010"));  // .--.-.
+	morse_map.insert(pair <string, string>("&", "01000"));   // .-... 
 
 	morse_map.insert(pair <string, string>("A", "01"));      // .-
 	morse_map.insert(pair <string, string>("B", "1000"));    // -...
