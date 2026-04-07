@@ -9,32 +9,32 @@ RUN and compile the project in DEBUG/x86 mode!!<br>
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/2.jpg />
 
 new 6 bit assignments for lowercase (a -> z), to morse passwords and safe urls:<br>
-a	000000<br>
-b	000001<br>
-c	000010<br>
-d	000011<br>
-e	000100<br>
-f	000101<br>
-g	000110<br>
-h	000111<br>
-i	001000<br>
-j	001001<br>
-k	001010<br>
-l	001011<br>
-m	0011000<br>
-n	0011010<br>
-o	001110<br>
-p	001111<br>
-q	010000<br>
-r	010001<br>
-s	0100100<br>
-t	010011<br>
-u	010100<br>
-v	0101010<br>
-w	010110<br>
-x	010111<br>
-y	011000<br>
-z	011001<br><br>
+a ->	000000<br>
+b ->	000001<br>
+c ->	000010<br>
+d ->	000011<br>
+e ->	000100<br>
+f ->	000101<br>
+g ->	000110<br>
+h ->	000111<br>
+i ->	001000<br>
+j ->	001001<br>
+k ->	001010<br>
+l ->	001011<br>
+m ->	0011000<br>
+n ->	0011010<br>
+o ->	001110<br>
+p ->	001111<br>
+q ->	010000<br>
+r ->	010001<br>
+s ->	0100100<br>
+t ->	010011<br>
+u ->	010100<br>
+v ->	0101010<br>
+w ->	010110<br>
+x ->	010111<br>
+y ->	011000<br>
+z ->	011001<br><br>
 
 added extra zero at:<br>
 •	001100 -> "?" and "m"<br>
