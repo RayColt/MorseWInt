@@ -117,7 +117,7 @@ void Morse::fill_morse_maps()
 		morse_map.insert(pair<string, string>("v", "110110"));	// --.--.
 		morse_map.insert(pair<string, string>("w", "10111"));	// -.---
 		morse_map.insert(pair<string, string>("x", "1111000")); // ----...
-		morse_map.insert(pair<string, string>("y", "11001"));	// ---..-
+		morse_map.insert(pair<string, string>("y", "11001"));	// --..-
 		morse_map.insert(pair<string, string>("z", "11010"));	// --.-.
 	}
 
