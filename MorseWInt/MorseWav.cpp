@@ -184,7 +184,7 @@ void MorseWav::Tones(int silence)
 * Define dit, dah, end of letter, end of word.
 *
 * The rules of 1/3/7 and 1/2/4
-* For Mobile microphones (and webcams, laptop mics, Bluetooth headsets…) now:
+* For Mobile microphones etc:
 * symbol space is one silence
 * letter space is two silences
 * word space is four silences
