@@ -431,7 +431,6 @@ const vector<string> Morse::explode(const string& s, const char& c)
 string Morse::fix_input(string str)
 {
 	string ret = "";
-	//regex e("[^a-zA-Z0-9!'\"@/_=\\s\\$\\(\\)\\,\\.\\:\\;\\?\\-]+");
 	regex e("[^a-zA-Z0-9!'\"@/_=&\\s\\$\\(\\)\\,\\.\\:\\;\\?\\-]+");
 	sregex_token_iterator iter(str.begin(), str.end(), e, -1), end;
 	vector<string> vec(iter, end);
