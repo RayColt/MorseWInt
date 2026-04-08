@@ -4,7 +4,7 @@
 * International Morse Code Encoder/Decoder/Wav creator with GUI and Command Line Interface in One!
 *
 * @author RAY COLT
-* @version 01111 010101 11111
+* @version 01111 010101 01111
 */
 #include "main.h"
 
@@ -470,7 +470,7 @@ static int ShowMorseApp(HWND& hwnd)
 
     hwnd = CreateWindow(
         wc.lpszClassName,
-        L"MorseWInt 01111 010101 11111",
+        L"MorseWInt 01111 010101 01111",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         700, 475,
@@ -1042,7 +1042,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 {
                     // fallback to synchronous if thread creation failed
                     delete p;
-                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, SHOW_EXTERNAL_MEDIAPLAYER); }
+                    try { MorseWav mw(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, STEREO, SHOW_EXTERNAL_MEDIAPLAYER); }
                     catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
                 }
             }
@@ -1066,7 +1066,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 else
                 {
                     delete p;
-                    try { MorseWav mw = MorseWav(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, SHOW_EXTERNAL_MEDIAPLAYER); }
+                    try { MorseWav mw(morse.c_str(), frequency_in_hertz, words_per_minute, samples_per_second, MONO, SHOW_EXTERNAL_MEDIAPLAYER); }
                     catch (...) { cerr << "Failed to create WAV (fallback)." << endl; }
                 }
             }

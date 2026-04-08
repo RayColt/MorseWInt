@@ -17,7 +17,7 @@ using namespace std;
 string Help::GetHelpTxt()
 {
 	string str = "";
-	str += " MORSE Encoder / Decoder Utility   Version 1.0\n";
+	str += " MORSE Encoder / Decoder Utility   Version 1.1\n";
 	str += " ----------------------------------------------\n";
 	str += " Converts text to and from Morse code in multiple formats.\n";
 	str += " Lowercase input is automatically converted to uppercase.\n";

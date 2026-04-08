@@ -1,4 +1,4 @@
-# MorseWInt
+# MorseWInt v1.1
 Morse INT, Win32 + CMD Line in one app<br>
 Do not forget to set your SaveDir in morsewav.h at line 29!!<br>
 RUN and compile the project in DEBUG/x86 mode!!<br>
