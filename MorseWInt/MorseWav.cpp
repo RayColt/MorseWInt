@@ -183,11 +183,11 @@ void MorseWav::Tones(int silence)
 /**
 * Define dit, dah, end of letter, end of word.
 *
-* The rules of 1/3/7 and 1/2/4(more suitable for common microphones, like webcams and phones):
-* Morse code is: tone for one unit (dit) or three units (dah)
-* followed by the sum of one unit of silence (always),
-* plus two units of silence (if end of letter, one space),
-* plus four units of silence (if also end of word).
+* The rules of 1/3/7 and 1/2/4
+* For Mobile microphones (and webcams, laptop mics, Bluetooth headsets…) now:
+* symbol space is one silence
+* letter space is two silences
+* word space is four silences
 */
 void MorseWav::Dit() { Tones(1); Tones(0); }
 void MorseWav::Dah() { Tones(1); Tones(1); Tones(1); Tones(0); }
