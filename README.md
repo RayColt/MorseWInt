@@ -8,7 +8,8 @@ RUN and compile the project in DEBUG/x86 mode!!<br>
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/1.jpg />
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/2.jpg />
 
-new 6 bit assignments for lowercase (a -> z), based upon ASCII, to morse modern passwords and urls:<br>
+// new assignments for lowercase (a -> z), based upon ASCII (1st or 2nd 1 removed), <br>
+// to morse modern passwords and urls<br>
 if (!uppercase)<br>
 {<br>
 	morse_map.insert(pair<string, string>("a", "1100001"));	// --....-<br>
