@@ -1,8 +1,8 @@
 /**
-* MorseWInt.cpp 
-* 
+* MorseWInt.cpp
+*
 * International Morse Code Encoder/Decoder/Wav creator with GUI and Command Line Interface in One!
-* 
+*
 * @author RAY COLT
 * @version 01111 010101 11111
 */
@@ -12,12 +12,12 @@
 
 /**
 * Make morse settings safe
-* 
+*
 * @param tone
 * @param wpm
 * @param sps
 */
-static void MakeMorseSafe(double &tone, int &wpm, int &sps)
+static void MakeMorseSafe(double& tone, int& wpm, int& sps)
 {
     if (sps < 8000.0) sps = 8000.0;
     if (sps > 48000) sps = 48000.0;
@@ -50,7 +50,7 @@ int get_options(int argc, char* argv[])
         cout << Help::GetHelpTxt();
         ok = true;
     }
-	else if (ok) // read sound mode settings
+    else if (ok) // read sound mode settings
     {
         while (argc > 1)
         {
@@ -61,10 +61,15 @@ int get_options(int argc, char* argv[])
             else if (strncmp(argv[2], "-wpm:", 5) == 0)
             {
                 words_per_minute = atof(&argv[2][5]);
+
             }
             else if (strncmp(argv[2], "-sps:", 5) == 0)
             {
                 samples_per_second = atof(&argv[2][5]);
+            }
+            else if (strncmp(argv[2], "-lc", 3) == 0)
+            {
+                lowercase = 1;
             }
             else
             {
@@ -102,12 +107,12 @@ string arg_string(char* arg)
 
 /**
 * Parse int from edit field
-* 
+*
 * @param hWnd
 * @param defaultVal
 * @return wstring
 */
-static int ParseIntFromEdit(HWND hEdit, int defaultVal) 
+static int ParseIntFromEdit(HWND hEdit, int defaultVal)
 {
     if (!hEdit) return defaultVal;
     wstring w = GetTextFromEditField(hEdit);
@@ -175,7 +180,7 @@ static void UpdateProgressFromEdit()
 
 /**
 * Convert string to lowercase in place
-* 
+*
 * @param s
 */
 static void ToLowerInPlace(TCHAR* s)
@@ -372,7 +377,7 @@ static void CreateMorseControls(HWND hWnd)
         hWnd, (HMENU)CID_M2WM, g_hInst, NULL
     );
 
-	// checkbox for uppercase original international morse code or with modern lowercase a-z assignments
+    // checkbox for uppercase original international morse code or with modern lowercase a-z assignments
     hUpperCase = CreateWindowExW(
         0, L"BUTTON", L"Only Uppercase, orig. Int. Morse.",
         WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX,
@@ -382,7 +387,7 @@ static void CreateMorseControls(HWND hWnd)
 
     // set default radio button selection
     SendMessageW(hMorse, BM_SETCHECK, BST_CHECKED, 0); // default selection
-	// set default checkbox state
+    // set default checkbox state
     SendMessageW(hUpperCase, BM_SETCHECK, BST_CHECKED, 0);
 
     // create progress bar
@@ -434,7 +439,7 @@ static void CreateMorseControls(HWND hWnd)
     SendMessageW(hHexBinMorse, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavS, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessageW(hMorseToWavM, WM_SETFONT, (WPARAM)hFont, TRUE);
-	SendMessageW(hUpperCase, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessageW(hUpperCase, WM_SETFONT, (WPARAM)hFont, TRUE);
 
     // set default morse settings in edit boxes
     wstring wt = StringToWString(trimDecimals(to_string(frequency_in_hertz), 3));
@@ -449,18 +454,18 @@ static void CreateMorseControls(HWND hWnd)
 
 /**
 * Show MorseWInt application window
-* 
+*
 * @param hwnd
 * @return int
 */
-static int ShowMorseApp(HWND &hwnd)
+static int ShowMorseApp(HWND& hwnd)
 {
     WNDCLASS wc = {};
     wc.lpfnWndProc = MorseWIntWndProc;
     wc.hInstance = g_hInst;
     wc.lpszClassName = L"MorseWIntWindowClass"; // TODO: add icon left corner???
     wc.hIcon = (HICON)LoadImage(NULL, L"app.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-   // wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    // wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_ICON1));
     RegisterClass(&wc);
 
     hwnd = CreateWindow(
@@ -621,8 +626,8 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
 
         if (id == CID_EDIT && code == EN_CHANGE)
         {
-             UpdateProgressFromEdit();
-			 return 0;
+            UpdateProgressFromEdit();
+            return 0;
         }
 
         bool b1 = false, b2 = false, b3 = false, b4 = false, b5 = false, b6 = false, b7 = false, b8 = false;
@@ -736,7 +741,7 @@ static LRESULT CALLBACK MorseWIntWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPA
                 p->sps = stod(WStringToString(spsin));
                 p->channels = MONO;
                 p->hwnd = hWnd;
-				p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
+                p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 // start thread (CRT-friendly)
                 uintptr_t h = _beginthreadex(NULL, 0, &WavThreadProc, p, 0, NULL);
@@ -861,7 +866,7 @@ static void AttachToNewConsole()
 
 /**
 * Check if a console is available (e.g., launched from cmd)
-* 
+*
 * @return bool
 */
 static bool HasConsole()
@@ -885,16 +890,16 @@ static bool HasConsole()
 
 /**
 * Windows application entry point
-* 
+*
 * @param hInstance
 */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // store instance handle in global variable
-	g_hInst = hInstance;
+    g_hInst = hInstance;
 
-	CheckRadioButton(g_hWnd, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
-	
+    CheckRadioButton(g_hWnd, CID_MORSE, CID_M2WM, CID_MORSE); // default selection
+
     // Process command line arguments
     int argc = 0;
     LPWSTR* wargv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -904,7 +909,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     // allocate array of char* (will own pointers to each C string)
     char** argv = (char**)malloc(sizeof(char*) * argc);
-    if (!argv) 
+    if (!argv)
     {
         LocalFree(wargv);
         fprintf(stderr, "malloc failed\n");
@@ -912,10 +917,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }
 
     // convert each wide string to a newly allocated char* buffer
-    for (int i = 0; i < argc; ++i) 
+    for (int i = 0; i < argc; ++i)
     {
         LPWSTR w = wargv[i];
-        if (!w) 
+        if (!w)
         {
             argv[i] = nullptr;
             continue;
@@ -923,14 +928,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
         // get required size including null terminator
         int needed = WideCharToMultiByte(CODE_PAGE, 0, w, -1, nullptr, 0, nullptr, nullptr);
-        if (needed <= 0) 
+        if (needed <= 0)
         {
             argv[i] = nullptr;
             continue;
         }
 
         char* buf = (char*)malloc(needed);
-        if (!buf) 
+        if (!buf)
         {
             // cleanup on partial failure
             for (int j = 0; j < i; ++j) free(argv[j]);
@@ -947,16 +952,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // keep original pointer so we can free later even if argv is advanced
     char** argv_start = argv;
     int argc_start = argc;
-	
+
     // parse arguments
     HWND argH = NULL;
     int n;
-    double sps = 44100;
-    // TODO: add option for lowercase and extended chars
-	Morse m = Morse(1); // 1= default to orig Int. uppercase morse
+
     if (argc != 1)
     {
-		// determine action
+        // determine action
         if (strcmp(argv[1], "ew") == 0) { action = "wav"; }
         else if (strcmp(argv[1], "ewm") == 0) { action = "wav_mono"; }
         else if (strcmp(argv[1], "e") == 0) { action = "encode"; }
@@ -966,7 +969,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (strcmp(argv[1], "hd") == 0) { action = "hexdec"; }
         else if (strcmp(argv[1], "hb") == 0) { action = "hexbin"; }
         else if (strcmp(argv[1], "hbd") == 0) { action = "hexbindec"; }
-        
+
         // command line mode
         AttachToNewConsole();
         if (!HasConsole())
@@ -1002,7 +1005,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             argc -= 1;
             argv += 1;
         }
-
+        bool uppercase = (lowercase == 0); // if lowercase == 1 then uppercase = false
+        Morse m(uppercase);
         if (action == "encode") { cout << m.morse_encode(arg_in) << "\n"; }
         else if (action == "binary") { cout << m.morse_binary(arg_in) << "\n"; }
         else if (action == "decode") { cout << m.morse_decode(arg_in) << "\n"; }
@@ -1015,7 +1019,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             string morse = m.morse_encode(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
-			MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
+            MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
             if (action == "wav")
             {
                 // start background thread to create stereo wav
@@ -1025,7 +1029,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 p->wpm = words_per_minute;
                 p->sps = samples_per_second;
                 p->channels = STEREO;
-				p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
+                p->showExternal = SHOW_EXTERNAL_MEDIAPLAYER;
 
                 uintptr_t th = _beginthreadex(NULL, 0, &ConsoleWavThreadProc, p, 0, NULL);
                 if (th != 0)
@@ -1069,16 +1073,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         }
         cout << "\nPress [Enter] key to close program . . .\n";
         int c = getchar();
-       return 0;
+        return 0;
     }
     else
     {
-		// GUI mode
+        // GUI mode
         ShowMorseApp(g_hWnd);
     }
 
     // when done, free all allocated buffers and arrays
-    for (int i = 0; i < argc_start; ++i) 
+    for (int i = 0; i < argc_start; ++i)
     {
         free(argv_start[i]);
     }

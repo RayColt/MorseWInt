@@ -80,6 +80,7 @@ const string error_in = "INPUT-ERROR";
 double frequency_in_hertz = 880.0;
 int words_per_minute = 33;
 int samples_per_second = 44100;
+int lowercase = 0; // 0 = default (uppercase), 1 = enable lowercase mode
 
 // ----------------- MorseWInt Data Structures ----------------
 
@@ -118,7 +119,6 @@ struct ConsoleWavParams
 
 // ---------------- MorseWInt Helper Functions ----------------
 
-int get_options(int argc, char* argv[]);
 string arg_string(char* arg);
 
 static void AttachToNewConsole();

@@ -32,6 +32,7 @@ string Help::GetHelpTxt()
 	str += "\n";
 	str += " MODES:\n";
 	str += " -h, -help        Display this help screen\n";
+	str += " -lc              Enable lowercase mode, adding (a-z) to supported characters\n";
 	str += " e, d             Morse Normal(. - <space>)\n";
 	str += " b, d             Binary Morse(0 1 <space>)\n";
 	str += " he, hd           Hex Morse(2E 2D 20)\n";
@@ -43,7 +44,8 @@ string Help::GetHelpTxt()
 	str += "\n";
 	str += " EXAMPLES:\n";
 	str += " .\\morse.exe d \"... ---  ...  ---\"\n";
-	str += " (Double quotes preserve double spaces used for word breaks)\n";
+	str += " .\\morse.exe e -lc \"http://yt.com/key=OaSxcvrtYuD&T=800\"\n";
+	str += " (Best to put msg or morse between Double Quotes!)\n";
 	str += "\n Place morse.exe in system32 and you can type:\n";
 	str += " morse ew -wpm:33 -hz:880 -sps:48000 sos sos\n";
 	str += " morse ewm -wpm:50 -hz:880 -sps:11025 paris paris paris\n";
