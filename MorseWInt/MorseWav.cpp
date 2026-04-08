@@ -181,7 +181,7 @@ void MorseWav::Tones(int silence)
 }
 
 /**
-* Define dit, dah, end of letter, end of word.
+* Define dit, dah and space.
 *
 * The rules of 1/3/7 and 1/2/4 timing conventions
 * For Mobile microphones etc I made:
