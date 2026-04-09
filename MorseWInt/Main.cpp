@@ -949,6 +949,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         argv[i] = buf;
     }
 
+    // keep original pointer so we can free later even if argv is advanced
+    char** argv_start = argv;
+    int argc_start = argc;
+
     // parse arguments
     HWND argH = NULL;
     int n;
