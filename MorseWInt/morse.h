@@ -25,12 +25,11 @@ private:
 	std::multimap <std::string, std::string> morse_map;
 	std::multimap <std::string, std::string> morse_map_reversed;
 	void fill_morse_maps();
-
-public:
 	std::string getBinChar(std::string character);
 	std::string getMorse(std::string character);
 	std::string getCharacter(std::string morse);
 
+public:
 	std::string morse_encode(std::string str);
 	std::string morse_decode(std::string str);
 	std::string morse_binary(std::string str);
