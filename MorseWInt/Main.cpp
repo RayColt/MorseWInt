@@ -50,7 +50,7 @@ int get_options(int argc, char* argv[])
         cout << Help::GetHelpTxt();
         ok = true;
     }
-    else if (ok) // read sound mode settings
+    else if (ok) // read mode settings
     {
         while (argc > 1)
         {
