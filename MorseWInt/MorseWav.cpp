@@ -184,7 +184,7 @@ void MorseWav::Tones(int silence)
 * Define dit, dah and space.
 *
 * The rules of 1/3/7 and 1/2/4 timing conventions
-* Mobile (micro)phones will compres morse tones, better do it yourself:
+* Mobile (micro)phones will compres morse & space tones, better do it yourself:
 * symbol space is one silence
 * letter space is two silences
 * word space is four silences
