@@ -50,7 +50,7 @@ int get_options(int argc, char* argv[])
         cout << Help::GetHelpTxt();
         ok = true;
     }
-    else if (ok) // read sound mode settings
+    else if (ok) // read mode settings
     {
         while (argc > 1)
         {
@@ -985,28 +985,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         argv += n;
         // generate morse code
         string arg_in;
-        // choose max allowed chars based on requested action
-        int max_chars = MAX_TXT_INPUT_CONSOLE;
-        if (action == "decode") max_chars = MAX_MORSE_INPUT_CONSOLE;
-        else if (action == "sound" || action == "wav" || action == "wav_mono") max_chars = MAX_SOUND_INPUT;
-
-        // collect arguments but never exceed max_chars
-        while (argc > 2 && static_cast<int>(arg_in.size()) < max_chars)
+        while (argc > 2)
         {
-            string part = arg_string(argv[2]);
-            int remaining = max_chars - static_cast<int>(arg_in.size());
-            if (remaining <= 0) break; // nothing more allowed
-            if (static_cast<int>(part.size()) > remaining)
-            {
-                part = part.substr(0, remaining);
-                cerr << "Maximum input size reached (" << max_chars << " characters).\n";
-            }
-            arg_in += part;
+            arg_in += arg_string(argv[2]);
             argc -= 1;
             argv += 1;
         }
+        // choose max allowed chars
+        arg_in = arg_in.substr(0, MAX_TXT_INPUT_CONSOLE);
+
         bool uppercase = (lowercase == 0); // if lowercase == 1 then uppercase = false
         Morse m(uppercase);
+
         if (action == "encode") { cout << m.morse_encode(arg_in) << "\n"; }
         else if (action == "binary") { cout << m.morse_binary(arg_in) << "\n"; }
         else if (action == "decode") { cout << m.morse_decode(arg_in) << "\n"; }
