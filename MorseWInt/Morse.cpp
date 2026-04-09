@@ -89,7 +89,7 @@ void Morse::fill_morse_maps()
 	morse_map.insert(pair <string, string>("Z", "1100"));    // --..
 	morse_map.insert(pair <string, string>("_", "001101"));  // ..--.-
 
-	// new assignments for lowercase (a -> z), based upon ASCII (1st or 2nd 1 removed), 
+	// new assignments for lowercase (a -> z), based upon ASCII (first one or two bits removed), 
 	// to morse modern passwords and urls
 	if (!uppercase)
 	{

@@ -8,7 +8,7 @@ RUN and compile the project in DEBUG/x86 mode!!<br>
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/1.jpg />
 <img src=https://github.com/RayColt/MorseWInt/blob/master/.gitfiles/2.jpg />
 
-// new assignments for lowercase (a -> z), based upon ASCII (1st or 2nd 1 removed), <br>
+// new assignments for lowercase (a -> z), based upon ASCII (first one or two bits removed), <br>
 // to morse modern passwords and urls<br>
 if (!uppercase)<br>
 {<br>
