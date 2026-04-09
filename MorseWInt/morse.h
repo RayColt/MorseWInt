@@ -35,6 +35,7 @@ public:
 	std::string morse_binary(std::string str);
 	std::string bin_morse_hexdecimal(std::string str, int modus);
 	std::string hexdecimal_bin_txt(std::string str, int modus);
+	std::string stringToUpper(std::string str);
 
 private:
 	std::string stringArrToString(std::vector<std::string> vstr);
@@ -43,6 +44,5 @@ private:
 	const std::vector<std::string> explode(const std::string& s, const char& c);
 	std::string fix_input(std::string str);
 	std::string remove_whitespaces(std::string str);
-	std::string stringToUpper(std::string str);
 	double duration_milliseconds(double wpm);
 };

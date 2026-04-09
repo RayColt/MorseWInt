@@ -50,7 +50,7 @@ int get_options(int argc, char* argv[])
         cout << Help::GetHelpTxt();
         ok = true;
     }
-    else if (ok) // read mode settings
+    else if (ok) // read sound mode settings
     {
         while (argc > 1)
         {
@@ -61,7 +61,6 @@ int get_options(int argc, char* argv[])
             else if (strncmp(argv[2], "-wpm:", 5) == 0)
             {
                 words_per_minute = atof(&argv[2][5]);
-
             }
             else if (strncmp(argv[2], "-sps:", 5) == 0)
             {
@@ -69,7 +68,7 @@ int get_options(int argc, char* argv[])
             }
             else if (strncmp(argv[2], "-lc", 3) == 0)
             {
-                lowercase = 1;
+				lowercase = 1;
             }
             else
             {
@@ -1007,6 +1006,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         else if (action == "sound" || action == "wav" || action == "wav_mono")
         {
             string morse = m.morse_encode(arg_in);
+            if (!lowercase) arg_in = m.stringToUpper(arg_in);
             cout << arg_in << "\n";
             cout << morse << "\n";
             MakeMorseSafe(frequency_in_hertz, words_per_minute, samples_per_second);
