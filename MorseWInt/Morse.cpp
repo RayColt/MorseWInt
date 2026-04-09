@@ -91,9 +91,11 @@ void Morse::fill_morse_maps()
 
 	// new assignments for lowercase (a -> z), based upon ASCII (first one or two bits removed), 
 	// to morse modern passwords and urls
+	// free non ascii 4bit codes: 0011(a), 0101, 1110, 1111(x)
 	if (!uppercase)
 	{
-		morse_map.insert(pair<string, string>("a", "1100001"));	// --....-
+		//morse_map.insert(pair<string, string>("a", "1100001"));	// --....-
+		morse_map.insert(pair<string, string>("a", "0011"));	// ..--
 		morse_map.insert(pair<string, string>("b", "00010"));	// ...-.
 		morse_map.insert(pair<string, string>("c", "100011"));	// -...--
 		morse_map.insert(pair<string, string>("d", "00100"));	// ..-.. 
@@ -116,7 +118,8 @@ void Morse::fill_morse_maps()
 		morse_map.insert(pair<string, string>("u", "10101"));	// -.-.-
 		morse_map.insert(pair<string, string>("v", "110110"));	// --.--.
 		morse_map.insert(pair<string, string>("w", "10111"));	// -.---
-		morse_map.insert(pair<string, string>("x", "1111000")); // ----...
+		//morse_map.insert(pair<string, string>("x", "1111000")); // ----...
+		morse_map.insert(pair<string, string>("x", "1111"));	// ----
 		morse_map.insert(pair<string, string>("y", "11001"));	// --..-
 		morse_map.insert(pair<string, string>("z", "11010"));	// --.-.
 	}
