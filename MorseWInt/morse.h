@@ -18,12 +18,15 @@
 class Morse
 {
 public:
-	bool uppercase;
 	Morse(bool uppercase);
+
+private:
+	bool uppercase;
 	std::multimap <std::string, std::string> morse_map;
 	std::multimap <std::string, std::string> morse_map_reversed;
 	void fill_morse_maps();
 
+public:
 	std::string getBinChar(std::string character);
 	std::string getMorse(std::string character);
 	std::string getCharacter(std::string morse);
@@ -34,6 +37,7 @@ public:
 	std::string bin_morse_hexdecimal(std::string str, int modus);
 	std::string hexdecimal_bin_txt(std::string str, int modus);
 
+private:
 	std::string stringArrToString(std::vector<std::string> vstr);
 	std::string strtr(std::string str, std::string from, std::string to);
 	std::string trim(const std::string& str);
@@ -41,6 +45,5 @@ public:
 	std::string fix_input(std::string str);
 	std::string remove_whitespaces(std::string str);
 	std::string stringToUpper(std::string str);
-
 	double duration_milliseconds(double wpm);
 };
