@@ -279,8 +279,8 @@ static void CreateMorseControls(HWND hWnd)
         WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
-    HWND hToneLabel = CreateWindowExW(0, L"STATIC", L"Tone",
-        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX + 20, wavinY + 20, 120, 18,
+    HWND hToneLabel = CreateWindowExW(0, L"STATIC", L"Tone:",
+        WS_CHILD | WS_VISIBLE | SS_LEFT, radiobuttonX, wavinY + 20, 120, 18,
         hWnd, NULL, g_hInst, NULL);
 
     HWND hWpmLabel = CreateWindowExW(0, L"STATIC", L"Wpm:",
